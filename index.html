@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>MyPythonLab — IDLE Console</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<style>
+:root{--bg:#0b1020;--panel:#0f172a;--panel-soft:#111827;--border:#1f2933;--text:#e5e7eb;--muted:#94a3b8;--accent:#38bdf8;--accent-2:#6366f1;--success:#22c55e;}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+header{padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+h1{margin:0;font-size:18px;color:var(--accent);}
+.status{font-size:12px;font-weight:bold;}
+.status.ready{color:var(--success);}
+.status.error{color:#f87171;}
+.buttons button{margin-left:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#020617;font-weight:600;cursor:pointer;}
+.buttons button:disabled{opacity:0.4;cursor:not-allowed;}
+main{flex:1;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow:hidden;}
+.panel{background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;}
+.panel-header{padding:8px 12px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2);}
+.output{padding:12px;background:#020617;font-family:'Cascadia Code','Fira Code',monospace;flex:1;overflow:auto;white-space:pre-wrap;font-size:14px;}
+.output pre{margin:0;line-height:1.6;}
+.output-input{display:inline-block;outline:none;border-bottom:2px solid var(--accent);color:var(--accent);min-width:15px;padding:0 2px;}
+.CodeMirror{height:100%;font-size:14px;}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🐍 MyPythonLab</h1><span id="status" class="status">Initializing...</span></div>
+  <div class="buttons">
+    <button id="runBtn" disabled>▶ Run</button>
+    <button id="stopBtn" disabled>⏹ Stop</button>
+    <button onclick="clearOutput()">Clear</button>
+  </div>
+</header>
+<main>
+  <div class="panel"><div class="panel-header">PYTHON EDITOR</div><textarea id="code"></textarea></div>
+  <div class="panel"><div class="panel-header">INTERACTIVE CONSOLE</div><div id="output" class="output"></div></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script>
+const defaultCode = `name = input("What is your name? ")
+print(f"Hello, {name}!")
+age = input("How old are you? ")
+print(f"In 5 years, you will be {int(age) + 5}!")`;
+const runBtn = document.getElementById("runBtn");
+const stopBtn = document.getElementById("stopBtn");
+const status = document.getElementById("status");
+const output = document.getElementById("output");
+const editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+  mode: "python", theme: "dracula", lineNumbers: true, indentUnit: 4
+});
+editor.setValue(localStorage.getItem("mypythonlab_code") |
+
+| defaultCode);
+editor.on("change", () => localStorage.setItem("mypythonlab_code", editor.getValue()));
+let sab, sInt32, sUint8, worker = null;
+function setupMemory() {
+  try { if (typeof SharedArrayBuffer!== "undefined") {
+      sab = new SharedArrayBuffer(1024 * 64);
+      sInt32 = new Int32Array(sab);
+      sUint8 = new Uint8Array(sab);
+      return true;
+  }} catch (e) { console.error(e); }
+  return false;
+}
+function append(text, color = "inherit") {
+  const pre = document.createElement("pre");
+  pre.textContent = text;
+  pre.style.color = color;
+  output.appendChild(pre);
+  output.scrollTop = output.scrollHeight;
+}
+function clearOutput() { output.innerHTML = ""; }
+function createWorker() {
+  if (worker) worker.terminate();
+  const workerSrc = `
+    importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js");
+    let pyodide, sInt32, sUint8;
+    self.onmessage = async (e) => {
+      const { code, sab } = e.data;
+      if (sab) { sInt32 = new Int32Array(sab); sUint8 = new Uint8Array(sab); }
+      if (!pyodide) {
+        pyodide = await loadPyodide();
+        pyodide.setStdout({ batched: (s) => self.postMessage({ type: "out", text: s }) });
+        pyodide.setStderr({ batched: (s) => self.postMessage({ type: "err", text: s }) });
+        pyodide.setStdin({ read(buffer) {
+            self.postMessage({ type: "stdin_req" });
+            Atomics.wait(sInt32, 0, 0);
+            const len = sInt32[1];
+            const data = sUint8.slice(8, 8 + len);
+            buffer.set(data);
+            Atomics.store(sInt32, 0, 0);
+            return len;
+        }});
+      }
+      try { await pyodide.runPythonAsync(code); self.postMessage({ type: "done" });
+      } catch (err) { self.postMessage({ type: "err", text: err.toString() }); }
+    };`;
+  const blob = new Blob(, { type: "application/javascript" });
+  worker = new Worker(URL.createObjectURL(blob));
+  worker.onmessage = (e) => {
+    const msg = e.data;
+    if (msg.type === "out") append(msg.text);
+    if (msg.type === "err") append(msg.text, "#f87171");
+    if (msg.type === "stdin_req") showInput();
+    if (msg.type === "done") stopExec();
+  };
+}
+function showInput() {
+  const span = document.createElement("span");
+  span.className = "output-input";
+  span.contentEditable = "true";
+  output.appendChild(span);
+  span.focus();
+  span.onkeydown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const val = span.textContent + "\n";
+      span.contentEditable = "false";
+      span.className = ""; 
+      const bytes = new TextEncoder().encode(val);
+      sUint8.set(bytes, 8);
+      sInt32[1] = bytes.length;
+      Atomics.store(sInt32, 0, 1);
+      Atomics.notify(sInt32, 0);
+      append(""); 
+    }
+  };
+}
+runBtn.onclick = () => {
+  if (!sab) { append("Error: Headers Missing.", "#f87171"); return; }
+  clearOutput();
+  runBtn.disabled = true;
+  stopBtn.disabled = false;
+  status.textContent = "Running...";
+  if (!worker) createWorker();
+  worker.postMessage({ code: editor.getValue(), sab: sab });
+};
+function stopExec() { runBtn.disabled = false; stopBtn.disabled = true; status.textContent = "Ready"; }
+stopBtn.onclick = () => { if (worker) worker.terminate(); worker = null; stopExec(); append("\n[Interrupted]", "#f87171"); };
+if (setupMemory()) { status.textContent = "Ready"; status.classList.add("ready"); runBtn.disabled = false; }
+else { status.textContent = "Error: Headers Missing"; status.classList.add("error"); }
+editor.addKeyMap({ "Ctrl-Enter": () => runBtn.onclick(), "Cmd-Enter": () => runBtn.onclick() });
+</script>
+</body>
+</html>
