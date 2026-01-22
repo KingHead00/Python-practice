@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>MyPythonLab — IDLE Pro</title>
+<title>MyPythonLab — Dark Mode Pro</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
 <style>
@@ -11,23 +11,24 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
 
-/* 2. REMOVE ALL OUTLINES & WHITE BORDERS */
-textarea,.CodeMirror,.output { background-color: var(--bg)!important; color: var(--text)!important; border: none!important; outline: none!important; }
-.CodeMirror-gutters { background-color: var(--panel-soft)!important; border-right: 1px solid var(--border)!important; }
-.panel { background: var(--panel-soft); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+/* 2. REMOVE WHITE BOXES & OUTLINES */
+textarea { background: transparent!important; color: transparent!important; border: none!important; outline: none!important; resize: none; position: absolute; }
+.CodeMirror { height: 100%; font-size: 14px; border: none!important; }
+.CodeMirror-gutters { background: var(--panel-soft)!important; border-right: 1px solid var(--border)!important; }
+.output { padding:12px; background:#020617; font-family:monospace; flex:1; overflow:auto; white-space:pre-wrap; font-size:14px; color:#cbd5e1; border: none!important; outline: none!important; }
 .output-input { display:inline-block; outline:none!important; border:none!important; border-bottom: 2px solid var(--accent)!important; color:var(--accent); min-width:15px; padding:0 2px; background:rgba(56,189,248,0.1); }
 
-/* Layout Styling */
+/* UI Styling */
 header{padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
-h1{margin:0;font-size:18px;color:var(--accent);}
+h1{margin:0;font-size:18px;color:var(--accent);letter-spacing:-0.5px;}
 .status{font-size:11px;font-weight:bold;text-transform:uppercase;}
 .status.ready{color:var(--success);}
 .status.error{color:#f87171;}
 .buttons button{margin-left:6px;padding:8px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#020617;font-weight:700;cursor:pointer;}
 .buttons button:disabled{opacity:0.3;cursor:not-allowed;}
 main{flex:1;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow:hidden;}
+.panel{background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;}
 .panel-header{padding:8px 12px;font-size:11px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2);}
-.output{padding:12px;font-family:monospace;flex:1;overflow:auto;white-space:pre-wrap;font-size:14px;}
 @media (max-width:900px){main{grid-template-columns:1fr}}
 </style>
 </head>
@@ -62,9 +63,9 @@ const status = document.getElementById("status");
 const runBtn = document.getElementById("runBtn");
 const stopBtn = document.getElementById("stopBtn");
 
-function diag(msg, color="var(--muted)") { output.innerHTML += `<div style="color:${color}; font-size:12px; margin-bottom:4px;"> ${msg}</div>`; }
+function log(msg, color="var(--muted)") { output.innerHTML += `<div style="color:${color}; font-size:12px;">> ${msg}</div>`; }
 
-// Editor Setup
+// 1. Setup Editor
 const editor = CodeMirror.fromTextArea(document.getElementById("code"), {
   mode: "python", theme: "dracula", lineNumbers: true, indentUnit: 4
 });
@@ -73,12 +74,12 @@ editor.setValue(localStorage.getItem("mypythonlab_code") |
 | `name = input("Name? ")\nprint(f"Hi {name}!")`);
 editor.on("change", () => localStorage.setItem("mypythonlab_code", editor.getValue()));
 
-// Shared Memory Bridge
+// 2. Shared Memory Logic (Requires Security Headers)
 let sab, sInt32, sUint8, worker = null;
 function setupMemory() {
   try {
     if (typeof SharedArrayBuffer!== "undefined") {
-      sab = new SharedArrayBuffer(1024 * 64);
+      sab = new SharedArrayBuffer(1024 * 64); 
       sInt32 = new Int32Array(sab);
       sUint8 = new Uint8Array(sab);
       return true;
@@ -87,6 +88,7 @@ function setupMemory() {
   return false;
 }
 
+// 3. Worker Input Implementation
 function showInput() {
   const span = document.createElement("span");
   span.className = "output-input";
@@ -101,7 +103,7 @@ function showInput() {
       span.classList.remove("output-input");
       const bytes = new TextEncoder().encode(val);
       sUint8.set(bytes, 8);
-      sInt32[5] = bytes.length;
+      sInt32[1] = bytes.length;
       Atomics.store(sInt32, 0, 1);
       Atomics.notify(sInt32, 0);
       output.appendChild(document.createElement("br"));
@@ -109,6 +111,7 @@ function showInput() {
   };
 }
 
+// 4. Worker Lifecycle
 function createWorker() {
   if (worker) worker.terminate();
   const src = `
@@ -123,8 +126,8 @@ function createWorker() {
         pyodide.setStderr({ batched: (s) => self.postMessage({ type: "err", text: s }) });
         pyodide.setStdin({ read(buffer) {
             self.postMessage({ type: "req" });
-            Atomics.wait(sInt32, 0, 0); // Worker sleeps here
-            const len = sInt32[5];
+            Atomics.wait(sInt32, 0, 0); // Worker sleeps here until input is ready
+            const len = sInt32[1];
             const data = sUint8.slice(8, 8 + len);
             buffer.set(data);
             Atomics.store(sInt32, 0, 0); 
@@ -153,20 +156,20 @@ runBtn.onclick = () => {
 };
 
 function finalize() { runBtn.disabled = false; stopBtn.disabled = true; status.textContent = "Ready"; }
-stopBtn.onclick = () => { if (worker) worker.terminate(); worker = null; finalize(); diag("Interrupted.", "#f87171"); };
-function clearOutput() { output.innerHTML = ""; diag("System Online."); }
+stopBtn.onclick = () => { if (worker) worker.terminate(); worker = null; finalize(); log("Execution Stopped", "#f87171"); };
+function clearOutput() { output.innerHTML = ""; }
 
-// Final Security & Initialization Check
+// 5. BOOT CHECK
 if (setupMemory()) {
   status.textContent = "Ready";
   status.classList.add("ready");
   runBtn.disabled = false;
-  diag("System Online. Environment is Cross-Origin Isolated.");
+  log("System Online. Security headers active.");
 } else {
   status.textContent = "Error: Blocked";
   status.classList.add("error");
-  diag("CRITICAL ERROR: Security Headers Missing.", "#f87171");
-  diag("Vercel has not yet applied the vercel.json settings. This is why you are stuck on Initializing.");
+  log("ERROR: Security Headers Missing.", "#f87171");
+  log("SharedArrayBuffer is disabled. Check your vercel.json placement.");
 }
 
 editor.addKeyMap({ "Ctrl-Enter": () => runBtn.onclick(), "Cmd-Enter": () => runBtn.onclick() });
