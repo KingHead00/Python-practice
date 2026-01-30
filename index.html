@@ -6,7 +6,7 @@
     <title>Python IDE - Rounded View</title>
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/0.65.13/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
     
@@ -344,18 +344,24 @@ print(f"hello, {name}!")</textarea>
         
         worker.onmessage = (e) => {
             if (e.data.type === "out") {
-                // Buffer output text. If it's just a prompt for input, it will be moved.
+                // Buffer output text. If it's an input prompt, it will be used in handleStdinRequest
                 pendingOutput += e.data.text;
-                const textNode = document.createTextNode(e.data.text);
-                output.appendChild(textNode);
+                
+                // If it looks like a standard output (ending in newline), print it immediately
+                if (e.data.text.includes('\n')) {
+                   const textNode = document.createTextNode(pendingOutput);
+                   output.appendChild(textNode);
+                   pendingOutput = "";
+                }
                 output.scrollTop = output.scrollHeight;
             } else if (e.data.type === "stdin") {
-                // If a prompt was printed, remove the raw text node so we can replace it with a styled input line
-                if (pendingOutput && output.lastChild && output.lastChild.nodeType === Node.TEXT_NODE) {
-                    output.removeChild(output.lastChild);
-                }
                 handleStdinRequest();
             } else if (e.data.type === "done") {
+                // Print any final leftover output
+                if (pendingOutput) {
+                   const textNode = document.createTextNode(pendingOutput);
+                   output.appendChild(textNode);
+                }
                 resetUI();
             }
         };
