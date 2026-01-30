@@ -1,6 +1,6 @@
 :root {
     --bg-dark: #0b1020;
-    --header-bg: #0f172a;
+    --panel-color: #0f172a;
     --border-color: #1f2933;
     --text-primary: #e5e7eb;
     --accent-blue: #38bdf8;
@@ -12,7 +12,8 @@
 
 body {
     margin: 0;
-    font-family: system-ui, -apple-system, sans-serif;
+    padding: 0;
+    font-family: system-ui, sans-serif;
     background-color: var(--bg-dark);
     color: var(--text-primary);
     height: 100vh;
@@ -21,8 +22,8 @@ body {
     overflow: hidden;
 }
 
-/* FIX: Forces all boxes to match the dark background (removes gray) */
-textarea,.CodeMirror,.console-screen,.pane {
+/* FIX: Removes white box flash by making everything dark immediately */
+textarea,.CodeMirror,.console-screen {
     background-color: var(--bg-dark)!important;
     color: var(--text-primary)!important;
     border: none!important;
@@ -30,75 +31,72 @@ textarea,.CodeMirror,.console-screen,.pane {
 }
 
 header {
-    padding: 12px 24px;
-    background: var(--header-bg);
+    padding: 10px 20px;
+    background: var(--panel-color);
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.brand { display: flex; align-items: center; gap: 12px; }
-.logo { font-size: 24px; } /* Glow Removed */
-.brand-text h1 { margin: 0; font-size: 16px; color: var(--accent-blue); letter-spacing: 0.5px; }
+h1 { margin: 0; font-size: 18px; color: var(--accent-blue); }
 
-.status-indicator { font-size: 10px; font-weight: bold; text-transform: uppercase; opacity: 0.7; }
-.ready { color: var(--success-green); opacity: 1; }
-.error { color: var(--error-red); opacity: 1; }
+.status-indicator { font-size: 11px; font-weight: bold; }
+.ready { color: var(--success-green); }
+.error { color: var(--error-red); }
 
 .controls button {
     margin-left: 8px;
-    padding: 8px 18px;
-    border-radius: 8px;
+    padding: 8px 16px;
+    border-radius: 6px;
     border: none;
     font-weight: bold;
     cursor: pointer;
     background: var(--accent-blue);
-    transition: transform 0.1s;
+    color: #0f172a;
 }
 
-.controls button:active { transform: scale(0.95); }
-.controls button:disabled { opacity: 0.2; cursor: not-allowed; }
-.btn-stop { background: transparent!important; color: var(--error-red)!important; border: 1px solid var(--error-red)!important; }
-.btn-muted { background: #1f2937!important; color: #94a3b8!important; }
+.controls button:disabled { opacity: 0.3; cursor: not-allowed; }
 
 main {
     flex: 1;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0;
-    padding: 0;
+    gap: 10px;
+    padding: 10px;
 }
 
-.pane {
-    border-right: 1px solid var(--border-color);
+.editor-pane,.console-pane {
+    background: var(--panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 .pane-label {
-    padding: 8px 15px;
+    padding: 6px 12px;
     font-size: 10px;
     font-weight: 800;
-    color: #64748b;
-    background: rgba(0,0,0,0.2);
+    color: #94a3b8;
+    background: rgba(0,0,0,0.3);
     border-bottom: 1px solid var(--border-color);
 }
 
 .console-screen {
     flex: 1;
-    padding: 20px;
+    padding: 15px;
     font-family: 'Fira Code', monospace;
-    font-size: 14px;
     overflow-y: auto;
     white-space: pre-wrap;
+    background-color: #020617!important;
 }
 
 .console-input-line {
     display: inline-block;
     border-bottom: 2px solid var(--accent-blue);
-    min-width: 15px;
-    color: var(--accent-blue);
+    min-width: 20px;
     outline: none;
+    color: var(--accent-blue);
 }
