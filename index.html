@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>MyPythonLab — Seamless Dark</title>
+    <title>MyPythonLab — Classic Design</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
     <link rel="stylesheet" href="style.css">
@@ -11,25 +11,22 @@
 
 <header>
     <div class="brand">
-        <span class="logo">🐍</span>
-        <div class="brand-text">
-            <h1>MyPythonLab</h1>
-            <span id="status" class="status-indicator">SYSTEM BOOTING...</span>
-        </div>
+        <h1>🐍 MyPythonLab</h1>
+        <span id="status" class="status-indicator">SYSTEM BOOTING...</span>
     </div>
     <div class="controls">
-        <button id="runBtn" class="btn-run" disabled>▶ Run</button>
-        <button id="stopBtn" class="btn-stop" disabled>⏹ Stop</button>
-        <button id="clearBtn" class="btn-muted">Clear</button>
+        <button id="runBtn" disabled>▶ Run</button>
+        <button id="stopBtn" disabled>⏹ Stop</button>
+        <button id="clearBtn">Clear</button>
     </div>
 </header>
 
 <main>
-    <div class="pane">
+    <div class="editor-pane">
         <div class="pane-label">PYTHON EDITOR (CTRL + ENTER)</div>
         <textarea id="editorTextarea"></textarea>
     </div>
-    <div class="pane">
+    <div class="console-pane">
         <div class="pane-label">INTERACTIVE CONSOLE</div>
         <div id="consoleOutput" class="console-screen"></div>
     </div>
