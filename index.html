@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>MyPythonLab — Seamless IDE</title>
+    <title>MyPythonLab — Seamless Dark</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
     <link rel="stylesheet" href="style.css">
@@ -14,7 +14,7 @@
         <span class="logo">🐍</span>
         <div class="brand-text">
             <h1>MyPythonLab</h1>
-            <div id="status" class="status-indicator">SYSTEM BOOTING...</div>
+            <span id="status" class="status-indicator">SYSTEM BOOTING...</span>
         </div>
     </div>
     <div class="controls">
@@ -25,18 +25,12 @@
 </header>
 
 <main>
-    <div class="panel editor-pane">
-        <div class="panel-header">
-            <span class="tab active">main.py</span>
-        </div>
-        <div class="editor-container">
-            <textarea id="editorTextarea"></textarea>
-        </div>
+    <div class="pane">
+        <div class="pane-label">PYTHON EDITOR (CTRL + ENTER)</div>
+        <textarea id="editorTextarea"></textarea>
     </div>
-    <div class="panel console-pane">
-        <div class="panel-header">
-            <span class="tab active">Console</span>
-        </div>
+    <div class="pane">
+        <div class="pane-label">INTERACTIVE CONSOLE</div>
         <div id="consoleOutput" class="console-screen"></div>
     </div>
 </main>
