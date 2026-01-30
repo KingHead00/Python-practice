@@ -3,41 +3,44 @@ const status = document.getElementById("status");
 const runBtn = document.getElementById("runBtn");
 const stopBtn = document.getElementById("stopBtn");
 
-// 1. Diagnostic Logger
-function log(msg, isError = false) {
+// 1. Better Diagnostic Logger
+function log(msg, type = "info") {
     const div = document.createElement("div");
-    div.style.color = isError? "var(--error-red)" : "#94a3b8";
-    div.style.fontSize = "12px";
+    div.style.marginBottom = "5px";
+    if (type === "error") div.style.color = "var(--error)";
+    else if (type === "success") div.style.color = "var(--success)";
+    else div.style.color = "var(--text-dim)";
     div.textContent = "> " + msg;
     output.appendChild(div);
+    output.scrollTop = output.scrollHeight;
 }
 
 // 2. Initialize Editor
 const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
     mode: "python",
     theme: "dracula",
-    lineNumbers: true
+    lineNumbers: true,
+    indentUnit: 4
 });
 
 // 3. Setup Shared Memory
 let sab, sInt32, sUint8, worker = null;
 
 if (typeof SharedArrayBuffer === "undefined") {
-    status.textContent = "SECURITY ERROR";
+    status.textContent = "SECURITY BLOCKED";
     status.classList.add("error");
-    log("CRITICAL: SharedArrayBuffer is blocked by your browser.", true);
-    log("This happens because the required Vercel security headers (COOP/COEP) are not active.", true);
+    log("Vercel security headers (COOP/COEP) not detected.", "error");
 } else {
     sab = new SharedArrayBuffer(1024 * 64); 
     sInt32 = new Int32Array(sab);
     sUint8 = new Uint8Array(sab);
-    status.textContent = "READY";
+    status.textContent = "Engine Ready";
     status.classList.add("ready");
     runBtn.disabled = false;
-    log("Engine ready. Environment is isolated.");
+    log("Environment Isolated. Ready to execute.", "success");
 }
 
-// 4. Handle Python Input Request
+// 4. Input Handler
 function handleStdinRequest() {
     const inputLine = document.createElement("span");
     inputLine.className = "console-input-line";
@@ -50,23 +53,25 @@ function handleStdinRequest() {
             e.preventDefault();
             const val = inputLine.textContent + "\n";
             inputLine.contentEditable = "false";
+            inputLine.style.background = "none";
+            inputLine.style.border = "none";
             
             const encoded = new TextEncoder().encode(val);
-            sUint8.set(encoded, 8); // Offset metadata
+            sUint8.set(encoded, 8);
             sInt32[1] = encoded.length;
-            Atomics.store(sInt32, 0, 1); // Unlock worker
+            Atomics.store(sInt32, 0, 1);
             Atomics.notify(sInt32, 0);
             output.appendChild(document.createElement("br"));
         }
     };
 }
 
-// 5. Worker Management
+// 5. Run handling
 runBtn.onclick = () => {
     output.innerHTML = "";
     runBtn.disabled = true;
     stopBtn.disabled = false;
-    status.textContent = "RUNNING...";
+    status.textContent = "Running...";
 
     if (worker) worker.terminate();
 
@@ -85,7 +90,7 @@ runBtn.onclick = () => {
                 pyodide.setStdin({
                     read(buffer) {
                         self.postMessage({ type: "stdin" });
-                        Atomics.wait(sInt32, 0, 0); // Worker sleeps here
+                        Atomics.wait(sInt32, 0, 0);
                         const len = sInt32[1];
                         buffer.set(sUint8.slice(8, 8 + len));
                         Atomics.store(sInt32, 0, 0);
@@ -104,27 +109,25 @@ runBtn.onclick = () => {
     `;
 
     worker = new Worker(URL.createObjectURL(new Blob([workerCode], {type: 'application/javascript'})));
-    
     worker.onmessage = (e) => {
         if (e.data.type === "out") output.innerHTML += `<span>${e.data.text}</span>`;
         if (e.data.type === "stdin") handleStdinRequest();
-        if (e.data.type === "done") resetUI();
+        if (e.data.type === "done") {
+            runBtn.disabled = false;
+            stopBtn.disabled = true;
+            status.textContent = "Engine Ready";
+        }
     };
-
     worker.postMessage({ code: editor.getValue(), sab: sab });
 };
-
-function resetUI() {
-    runBtn.disabled = false;
-    stopBtn.disabled = true;
-    status.textContent = "READY";
-}
 
 stopBtn.onclick = () => {
     if (worker) worker.terminate();
     worker = null;
-    resetUI();
-    log("Execution Interrupted.", true);
+    runBtn.disabled = false;
+    stopBtn.disabled = true;
+    status.textContent = "Interrupted";
+    log("Execution Stopped.", "error");
 };
 
 document.getElementById("clearBtn").onclick = () => output.innerHTML = "";
