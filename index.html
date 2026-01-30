@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Pro IDE</title>
+    <title>Python IDE</title>
+    <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
@@ -11,24 +12,22 @@
     
     <style>
         :root {
-            --bg-dark: #0d1117;
-            --panel-color: #161b22;
-            --border-color: #30363d;
-            --text-primary: #e6edf3;
-            --text-muted: #8b949e;
-            --accent: #58a6ff;
-            --success: #3fb950;
-            --danger: #f85149;
-            --warning: #d29922;
-            --console-bg: #010409;
+            --bg-dark: #0b1020;
+            --panel-color: #0f172a;
+            --border-color: #1f2933;
+            --text-primary: #e5e7eb;
+            --accent-blue: #38bdf8;
+            --error-red: #f87171;
+            --success-green: #22c55e;
+            --save-green: #10b981;
         }
 
-        * { box-sizing: border-box; outline: none!important; }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            font-family: system-ui, -apple-system, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-primary);
             height: 100vh;
@@ -37,183 +36,137 @@
             overflow: hidden;
         }
 
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 5px; border: 2px solid var(--bg-dark); }
-        ::-webkit-scrollbar-thumb:hover { background: #484f58; }
-
-        /* Header */
         header {
-            height: 56px;
-            padding: 0 24px;
+            padding: 10px 20px;
             background: var(--panel-color);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            z-index: 100;
+            z-index: 10;
         }
-
-       .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-       .logo-svg { width: 28px; height: 28px; }
 
         h1 {
             margin: 0;
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 18px;
+            color: var(--accent-blue);
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--text-primary);
+            letter-spacing: 1px;
         }
 
-       .status-badge {
-            font-size: 9px;
-            font-weight: 800;
-            padding: 2px 10px;
-            border-radius: 12px;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--border-color);
-            transition: all 0.3s;
+        .status-indicator {
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 15px;
+            text-transform: uppercase;
         }
 
-       .ready { color: var(--success); border-color: rgba(63, 185, 80, 0.3); }
-       .running { color: var(--accent); border-color: rgba(88, 166, 255, 0.4); box-shadow: 0 0 10px rgba(88, 166, 255, 0.1); }
+        .ready { color: var(--success-green); }
+        .running { color: var(--accent-blue); }
 
-        /* Buttons */
-       .controls { display: flex; gap: 10px; }
-
-       .btn {
-            padding: 7px 16px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            background: #21262d;
-            color: #c9d1d9;
+        .controls {
             display: flex;
-            align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
-       .btn:hover:not(:disabled) { background: #30363d; border-color: #8b949e; transform: translateY(-1px); }
-       .btn:active:not(:disabled) { transform: translateY(0); }
-       .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .controls button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
 
-       .btn-run { background: var(--success); color: white; border: none; }
-       .btn-run:hover:not(:disabled) { background: #46bc5a; box-shadow: 0 0 15px rgba(63, 185, 80, 0.2); }
+        #runBtn { background: var(--accent-blue); color: #0f172a; }
+        #runBtn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-       .btn-save { background: #238636; color: white; border: none; }
-       .btn-save.saved { background: var(--accent); }
+        .secondary-btn { background: #334155; color: white; }
+        #saveBtn { background: var(--save-green); color: white; }
+        #stopBtn { background: #ef4444; color: white; }
 
-       .btn-stop { background: var(--danger); color: white; border: none; }
-
-        /* Main View */
         main {
             flex: 1;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            padding: 16px;
-            background-color: var(--bg-dark);
+            gap: 15px;
+            padding: 15px;
         }
 
-       .pane {
+        .pane {
             background: var(--panel-color);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            height: 100%;
         }
 
-       .pane-header {
-            padding: 10px 16px;
-            background: #1c2128;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
+        .pane-label {
+            padding: 8px 12px;
+            font-size: 10px;
             letter-spacing: 1px;
+            font-weight: 800;
+            color: #94a3b8;
+            background: rgba(0,0,0,0.4);
             border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
+            text-transform: uppercase;
         }
 
-        /* CodeMirror Styling */
-       .CodeMirror {
+        .CodeMirror {
             flex: 1;
-            height: 100%!important;
-            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            height: 100% !important;
+            font-family: 'Fira Code', monospace;
             font-size: 14px;
-            background: var(--panel-color)!important;
         }
 
-       .CodeMirror-gutters { background: #1c2128!important; border-right: 1px solid var(--border-color); }
-
-        /* Console styling */
-       .console-screen {
+        .console-screen {
             flex: 1;
-            padding: 18px;
+            padding: 15px;
             font-family: 'Fira Code', monospace;
             overflow-y: auto;
             white-space: pre-wrap;
-            background-color: var(--console-bg)!important;
+            background-color: #020617 !important;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.5;
             color: #d1d5db;
         }
 
-       .input-cursor {
+        .input-cursor {
             display: inline-block;
             min-width: 1ch;
-            border-bottom: 2px solid var(--accent);
+            border-bottom: 2px solid var(--accent-blue);
+            outline: none;
             color: white;
             padding: 0 2px;
-            background: rgba(88, 166, 255, 0.1);
+            background: rgba(56, 189, 248, 0.1);
         }
-        
-       .error-text { color: var(--danger); }
-       .sys-text { color: var(--text-muted); font-style: italic; font-size: 12px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="brand">
-        <svg class="logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M24.05 4C18.17 4 18.52 6.55 18.52 6.55V9.16H24.23V9.95H16.14C16.14 9.95 10.3 10.45 10.3 16.27C10.3 22.1 14.88 22.33 14.88 22.33H17.43V18.78C17.43 18.78 17.27 14.48 21.67 14.48H29.76C29.76 14.48 33.86 14.28 33.86 10.51V6.95C33.86 6.95 34.25 4 24.05 4Z" fill="#3776AB"/>
-            <path d="M23.95 44C29.83 44 29.48 41.45 29.48 41.45V38.84H23.77V38.05H31.86C31.86 38.05 37.7 37.55 37.7 31.73C37.7 25.9 33.12 25.67 33.12 25.67H30.57V29.22C30.57 29.22 30.73 33.52 26.33 33.52H18.24C18.24 33.52 14.14 33.72 14.14 37.49V41.05C14.14 41.05 13.75 44 23.95 44Z" fill="#FFD43B"/>
-            <circle cx="16.5" cy="11.5" r="1.5" fill="white"/>
-            <circle cx="31.5" cy="36.5" r="1.5" fill="white"/>
-        </svg>
-        <h1>Pro Python</h1>
-        <span id="status" class="status-badge ready">Ready</span>
+    <div style="display: flex; align-items: center;">
+        <h1>Python IDE</h1>
+        <span id="status" class="status-indicator ready">READY</span>
     </div>
     <div class="controls">
-        <button id="saveBtn" class="btn btn-save">Save</button>
-        <button id="clearBtn" class="btn">Clear</button>
-        <button id="stopBtn" class="btn btn-stop" style="display:none">Stop</button>
-        <button id="runBtn" class="btn btn-run" disabled>Run Code</button>
+        <button id="saveBtn">Save</button>
+        <button id="clearBtn" class="secondary-btn">Clear</button>
+        <button id="stopBtn" style="display:none">Stop</button>
+        <button id="runBtn" disabled>Run Code</button>
     </div>
 </header>
 
 <main>
     <div class="pane">
-        <div class="pane-header"><span>Editor</span><span>main.py</span></div>
+        <div class="pane-header">Editor</div>
         <textarea id="editorTextarea"></textarea>
     </div>
     <div class="pane">
-        <div class="pane-header"><span>Console</span><span>Terminal</span></div>
+        <div class="pane-header">Console</div>
         <div id="consoleOutput" class="console-screen"></div>
     </div>
 </main>
@@ -233,42 +186,68 @@
         indentUnit: 4,
         autoCloseBrackets: true,
         matchBrackets: true,
+        indentWithTabs: false,
         extraKeys: {
-            "Ctrl-Enter": () => runBtn.click(),
-            "Cmd-Enter": () => runBtn.click(),
-            "Ctrl-S": () => saveBtn.click()
+            "Ctrl-Enter": function(cm) {
+                runBtn.click();
+            },
+            "Cmd-Enter": function(cm) {
+                runBtn.click();
+            },
+            "Ctrl-S": function(cm) {
+                saveBtn.click();
+            },
+            "Cmd-S": function(cm) {
+                saveBtn.click();
+            }
         }
     });
 
-    const demoCode = `# Advanced IDE Features
-import math
+    const complexExample = `# All Python features (if, loops, functions) are supported!
+import random
 
-print("SYSTEM INITIALIZED")
-name = input("Identify yourself: ")
+def start_game():
+    print("--- WELCOME TO THE NUMBER QUEST ---")
+    print("(Use CTRL + ENTER to run)")
+    name = input("Enter your name: ")
+    print(f"Welcome, {name}! Let's see if you can win.")
+    
+    score = 0
+    rounds = 3
+    
+    for i in range(1, rounds + 1):
+        print(f"\\nRound {i} of {rounds}")
+        secret = random.randint(1, 10)
+        
+        try:
+            guess_str = input("Guess a number between 1 and 10: ")
+            guess = int(guess_str)
+            
+            if guess == secret:
+                print("Correct! You gain 10 points.")
+                score += 10
+            elif guess < secret:
+                print(f"Too low! The number was {secret}.")
+            else:
+                print(f"Too high! The number was {secret}.")
+        except ValueError:
+            print("That's not a number! Round lost.")
 
-if name:
-    print(f"Welcome, Agent {name}.")
-    radius = input("Enter a circle radius to compute: ")
-    try:
-        r = float(radius)
-        print(f"Area: {math.pi * r**2:.2f}")
-    except:
-        print("Invalid input.")
-else:
-    print("No identification provided.")`;
+    print("\\n--- GAME OVER ---")
+    if score >= 20:
+        print(f"Masterful! Final Score: {score}")
+    else:
+        print(f"Good effort! Final Score: {score}")
 
-    editor.setValue(localStorage.getItem('py_ide_v5_code') |
+start_game()`;
 
-| demoCode);
+    editor.setValue(localStorage.getItem('python_ide_code_v3') || complexExample);
 
     saveBtn.onclick = () => {
-        localStorage.setItem('py_ide_v5_code', editor.getValue());
-        saveBtn.textContent = "Saved";
-        saveBtn.classList.add('saved');
-        setTimeout(() => {
-            saveBtn.textContent = "Save";
-            saveBtn.classList.remove('saved');
-        }, 1500);
+        localStorage.setItem('python_ide_code_v3', editor.getValue());
+        const original = saveBtn.textContent;
+        saveBtn.textContent = "Saved!";
+        setTimeout(() => saveBtn.textContent = original, 1500);
     };
 
     let worker = null;
@@ -281,14 +260,12 @@ else:
         runBtn.disabled = false;
     } catch (e) {
         status.textContent = "SAB ERROR";
-        status.className = "status-badge error";
+        status.className = "status-indicator error";
     }
 
-    function write(text, className = "") {
-        const span = document.createElement("span");
-        if (className) span.className = className;
-        span.textContent = text;
-        output.appendChild(span);
+    function printToConsole(text) {
+        const node = document.createTextNode(text);
+        output.appendChild(node);
         output.scrollTop = output.scrollHeight;
     }
 
@@ -305,7 +282,7 @@ else:
                 const val = inputSpan.textContent + "\n";
                 inputSpan.contentEditable = "false";
                 inputSpan.classList.remove("input-cursor");
-                write("\n");
+                printToConsole("\n");
 
                 const encoded = new TextEncoder().encode(val);
                 sUint8.set(encoded, 8);
@@ -319,13 +296,34 @@ else:
     runBtn.onclick = () => {
         output.innerHTML = "";
         runBtn.style.display = "none";
-        stopBtn.style.display = "flex";
-        status.textContent = "Running";
-        status.className = "status-badge running";
+        stopBtn.style.display = "block";
+        status.textContent = "RUNNING...";
+        status.className = "status-indicator running";
 
         if (worker) worker.terminate();
 
-        const workerBlob = new Blob(;
+        const workerBlob = new Blob([`
+            importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js");
+            let pyodide;
+            self.onmessage = async (e) => {
+                const { code, sab } = e.data;
+                const sInt32 = new Int32Array(sab);
+                const sUint8 = new Uint8Array(sab);
+                try {
+                    if (!pyodide) {
+                        pyodide = await loadPyodide();
+                        pyodide.setStdout({
+                            write: (buf) => {
+                                const text = new TextDecoder().decode(buf);
+                                self.postMessage({ type: "out", text: text });
+                                return buf.length;
+                            }
+                        });
+                        pyodide.setStdin({
+                            read: (buf) => {
+                                self.postMessage({ type: "in" });
+                                Atomics.wait(sInt32, 0, 0);
+                                const len = sInt32[1];
                                 buf.set(sUint8.slice(8, 8 + len));
                                 Atomics.store(sInt32, 0, 0);
                                 return len;
@@ -334,7 +332,7 @@ else:
                     }
                     await pyodide.runPythonAsync(code);
                 } catch (err) {
-                    self.postMessage({ type: "err", text: "\\n" + err.toString() });
+                    self.postMessage({ type: "out", text: "\\n" + err.toString() });
                 }
                 self.postMessage({ type: "done" });
             };
@@ -342,8 +340,7 @@ else:
 
         worker = new Worker(URL.createObjectURL(workerBlob));
         worker.onmessage = (e) => {
-            if (e.data.type === "out") write(e.data.text);
-            else if (e.data.type === "err") write(e.data.text, "error-text");
+            if (e.data.type === "out") printToConsole(e.data.text);
             else if (e.data.type === "in") handleInput();
             else if (e.data.type === "done") resetUI();
         };
@@ -351,16 +348,16 @@ else:
     };
 
     function resetUI() {
-        runBtn.style.display = "flex";
+        runBtn.style.display = "block";
         stopBtn.style.display = "none";
-        status.textContent = "Ready";
-        status.className = "status-badge ready";
+        status.textContent = "READY";
+        status.className = "status-indicator ready";
     }
 
     stopBtn.onclick = () => {
         if (worker) worker.terminate();
         resetUI();
-        write("\n", "sys-text");
+        printToConsole("\n[Execution Terminated]");
     };
 
     clearBtn.onclick = () => { output.innerHTML = ""; };
