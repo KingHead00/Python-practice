@@ -152,13 +152,19 @@
         .console-input-line {
             display: inline-block;
             border-bottom: 2px solid var(--accent-blue);
-            min-width: 10px;
+            min-width: 15px;
             outline: none;
             color: var(--accent-blue);
             background: transparent;
+            padding: 0 4px;
         }
 
         .log-entry { margin-bottom: 4px; }
+        
+        .input-prompt {
+            color: var(--accent-blue);
+            margin-right: 4px;
+        }
     </style>
 </head>
 <body>
@@ -181,7 +187,8 @@
         <div class="pane-label">Editor</div>
         <textarea id="editorTextarea"># Try typing something like:
 name = input("What is your name? ")
-print(f"Hello, {name}!")</textarea>
+age = input(f"Nice to meet you {name}! How old are you? ")
+print(f"Summary: {name} is {age} years old.")</textarea>
     </div>
     <div class="console-pane">
         <div class="pane-label">Console</div>
@@ -218,13 +225,11 @@ print(f"Hello, {name}!")</textarea>
         }
     });
 
-    // Load saved code on startup
     const savedCode = localStorage.getItem('python_ide_code');
     if (savedCode) {
         editor.setValue(savedCode);
     }
 
-    // Save functionality
     saveBtn.onclick = () => {
         localStorage.setItem('python_ide_code', editor.getValue());
         const originalText = saveBtn.textContent;
@@ -237,6 +242,7 @@ print(f"Hello, {name}!")</textarea>
     };
 
     let sab, sInt32, sUint8, worker = null;
+    let pendingOutput = ""; // Tracks output to identify potential input prompts
 
     try {
         if (typeof SharedArrayBuffer === "undefined") {
@@ -256,10 +262,22 @@ print(f"Hello, {name}!")</textarea>
     }
 
     function handleStdinRequest() {
+        const line = document.createElement("div");
+        
+        // If there was previous output without a newline, we assume it's the prompt
+        // Pyodide's stdin read often triggers after a write without a newline
+        const promptSpan = document.createElement("span");
+        promptSpan.className = "input-prompt";
+        promptSpan.textContent = pendingOutput;
+        pendingOutput = ""; // Clear it as we've consumed it for the prompt
+        
         const inputLine = document.createElement("span");
         inputLine.className = "console-input-line";
         inputLine.contentEditable = "true";
-        output.appendChild(inputLine);
+        
+        line.appendChild(promptSpan);
+        line.appendChild(inputLine);
+        output.appendChild(line);
         inputLine.focus();
 
         inputLine.onkeydown = (e) => {
@@ -274,13 +292,14 @@ print(f"Hello, {name}!")</textarea>
                 sInt32[1] = encoded.length;
                 Atomics.store(sInt32, 0, 1);
                 Atomics.notify(sInt32, 0);
-                output.appendChild(document.createElement("br"));
+                output.scrollTop = output.scrollHeight;
             }
         };
     }
 
     runBtn.onclick = () => {
         output.innerHTML = "";
+        pendingOutput = "";
         runBtn.disabled = true;
         stopBtn.disabled = false;
         status.textContent = "RUNNING...";
@@ -323,10 +342,16 @@ print(f"Hello, {name}!")</textarea>
         
         worker.onmessage = (e) => {
             if (e.data.type === "out") {
+                // We track output to see if it's an input prompt
+                pendingOutput += e.data.text;
                 const textNode = document.createTextNode(e.data.text);
                 output.appendChild(textNode);
                 output.scrollTop = output.scrollHeight;
             } else if (e.data.type === "stdin") {
+                // Remove the last text node if it matches pendingOutput to prevent double display
+                if (pendingOutput && output.lastChild && output.lastChild.nodeType === Node.TEXT_NODE) {
+                    output.removeChild(output.lastChild);
+                }
                 handleStdinRequest();
             } else if (e.data.type === "done") {
                 resetUI();
@@ -352,6 +377,7 @@ print(f"Hello, {name}!")</textarea>
 
     clearBtn.onclick = () => {
         output.innerHTML = "";
+        pendingOutput = "";
     };
 </script>
 
