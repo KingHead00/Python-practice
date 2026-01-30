@@ -6,7 +6,7 @@
     <title>Python IDE - Rounded View</title>
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/0.65.13/mode/python/python.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
     
@@ -162,7 +162,7 @@
         .log-entry { margin-bottom: 4px; }
         
         .input-prompt {
-            color: var(--accent-blue);
+            color: var(--text-primary);
             margin-right: 4px;
         }
     </style>
@@ -187,8 +187,7 @@
         <div class="pane-label">Editor</div>
         <textarea id="editorTextarea"># Try typing something like:
 name = input("What is your name? ")
-age = input(f"Nice to meet you {name}! How old are you? ")
-print(f"Summary: {name} is {age} years old.")</textarea>
+print(f"hello, {name}!")</textarea>
     </div>
     <div class="console-pane">
         <div class="pane-label">Console</div>
@@ -242,7 +241,7 @@ print(f"Summary: {name} is {age} years old.")</textarea>
     };
 
     let sab, sInt32, sUint8, worker = null;
-    let pendingOutput = ""; // Tracks output to identify potential input prompts
+    let pendingOutput = ""; 
 
     try {
         if (typeof SharedArrayBuffer === "undefined") {
@@ -263,13 +262,13 @@ print(f"Summary: {name} is {age} years old.")</textarea>
 
     function handleStdinRequest() {
         const line = document.createElement("div");
+        line.className = "log-entry";
         
-        // If there was previous output without a newline, we assume it's the prompt
-        // Pyodide's stdin read often triggers after a write without a newline
+        // Use the accumulated pending output as the prompt text
         const promptSpan = document.createElement("span");
         promptSpan.className = "input-prompt";
-        promptSpan.textContent = pendingOutput;
-        pendingOutput = ""; // Clear it as we've consumed it for the prompt
+        promptSpan.textContent = pendingOutput || ""; 
+        pendingOutput = ""; // Reset after use
         
         const inputLine = document.createElement("span");
         inputLine.className = "console-input-line";
@@ -278,6 +277,9 @@ print(f"Summary: {name} is {age} years old.")</textarea>
         line.appendChild(promptSpan);
         line.appendChild(inputLine);
         output.appendChild(line);
+        
+        // Auto-scroll and focus
+        output.scrollTop = output.scrollHeight;
         inputLine.focus();
 
         inputLine.onkeydown = (e) => {
@@ -342,13 +344,13 @@ print(f"Summary: {name} is {age} years old.")</textarea>
         
         worker.onmessage = (e) => {
             if (e.data.type === "out") {
-                // We track output to see if it's an input prompt
+                // Buffer output text. If it's just a prompt for input, it will be moved.
                 pendingOutput += e.data.text;
                 const textNode = document.createTextNode(e.data.text);
                 output.appendChild(textNode);
                 output.scrollTop = output.scrollHeight;
             } else if (e.data.type === "stdin") {
-                // Remove the last text node if it matches pendingOutput to prevent double display
+                // If a prompt was printed, remove the raw text node so we can replace it with a styled input line
                 if (pendingOutput && output.lastChild && output.lastChild.nodeType === Node.TEXT_NODE) {
                     output.removeChild(output.lastChild);
                 }
