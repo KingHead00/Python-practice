@@ -3,7 +3,7 @@ const status = document.getElementById("status");
 const runBtn = document.getElementById("runBtn");
 const stopBtn = document.getElementById("stopBtn");
 
-// 1. Better Diagnostic Logger
+// 1. Diagnostic Logger
 function log(msg, type = "info") {
     const div = document.createElement("div");
     div.style.marginBottom = "5px";
@@ -15,12 +15,16 @@ function log(msg, type = "info") {
     output.scrollTop = output.scrollHeight;
 }
 
-// 2. Initialize Editor
+// 2. Initialize Editor with Shortcut
 const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
     mode: "python",
     theme: "dracula",
     lineNumbers: true,
-    indentUnit: 4
+    indentUnit: 4,
+    extraKeys: {
+        "Ctrl-Enter": () => runBtn.click(), // SHORTCUT ADDED
+        "Cmd-Enter": () => runBtn.click()   // MAC SHORTCUT ADDED
+    }
 });
 
 // 3. Setup Shared Memory
@@ -29,15 +33,15 @@ let sab, sInt32, sUint8, worker = null;
 if (typeof SharedArrayBuffer === "undefined") {
     status.textContent = "SECURITY BLOCKED";
     status.classList.add("error");
-    log("Vercel security headers (COOP/COEP) not detected.", "error");
+    log("Vercel security headers (COOP/COEP) not active.", "error");
 } else {
     sab = new SharedArrayBuffer(1024 * 64); 
     sInt32 = new Int32Array(sab);
     sUint8 = new Uint8Array(sab);
-    status.textContent = "Engine Ready";
+    status.textContent = "READY";
     status.classList.add("ready");
     runBtn.disabled = false;
-    log("Environment Isolated. Ready to execute.", "success");
+    log("Engine online.", "success");
 }
 
 // 4. Input Handler
@@ -53,7 +57,6 @@ function handleStdinRequest() {
             e.preventDefault();
             const val = inputLine.textContent + "\n";
             inputLine.contentEditable = "false";
-            inputLine.style.background = "none";
             inputLine.style.border = "none";
             
             const encoded = new TextEncoder().encode(val);
@@ -66,7 +69,7 @@ function handleStdinRequest() {
     };
 }
 
-// 5. Run handling
+// 5. Execution logic
 runBtn.onclick = () => {
     output.innerHTML = "";
     runBtn.disabled = true;
@@ -115,7 +118,7 @@ runBtn.onclick = () => {
         if (e.data.type === "done") {
             runBtn.disabled = false;
             stopBtn.disabled = true;
-            status.textContent = "Engine Ready";
+            status.textContent = "READY";
         }
     };
     worker.postMessage({ code: editor.getValue(), sab: sab });
@@ -126,8 +129,8 @@ stopBtn.onclick = () => {
     worker = null;
     runBtn.disabled = false;
     stopBtn.disabled = true;
-    status.textContent = "Interrupted";
-    log("Execution Stopped.", "error");
+    status.textContent = "READY";
+    log("Stopped.", "error");
 };
 
 document.getElementById("clearBtn").onclick = () => output.innerHTML = "";
