@@ -17,7 +17,6 @@
             --border-color: #1f2933;
             --text-primary: #e5e7eb;
             --accent-blue: #38bdf8;
-            --accent-yellow: #ffd43b;
             --error-red: #f87171;
             --success-green: #22c55e;
             --save-green: #10b981;
@@ -38,7 +37,7 @@
         }
 
         header {
-            padding: 8px 20px;
+            padding: 10px 20px;
             background: var(--panel-color);
             border-bottom: 1px solid var(--border-color);
             display: flex;
@@ -47,24 +46,12 @@
             z-index: 10;
         }
 
-        .brand-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-svg {
-            width: 32px;
-            height: 32px;
-        }
-
         h1 {
             margin: 0;
             font-size: 18px;
             color: var(--accent-blue);
             text-transform: uppercase;
             letter-spacing: 1px;
-            font-weight: 900;
         }
 
         .status-indicator {
@@ -72,15 +59,10 @@
             font-weight: bold;
             margin-left: 15px;
             text-transform: uppercase;
-            background: rgba(0,0,0,0.3);
-            padding: 4px 10px;
-            border-radius: 20px;
         }
 
-        .ready { color: var(--success-green); border: 1px solid rgba(34, 197, 94, 0.3); }
-        .running { color: var(--accent-blue); border: 1px solid rgba(56, 189, 248, 0.3); animation: blink 1.5s infinite; }
-
-        @keyframes blink { 50% { opacity: 0.5; } }
+        .ready { color: var(--success-green); }
+        .running { color: var(--accent-blue); }
 
         .controls {
             display: flex;
@@ -98,7 +80,6 @@
         }
 
         #runBtn { background: var(--accent-blue); color: #0f172a; }
-        #runBtn:hover { filter: brightness(1.1); }
         #runBtn:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .secondary-btn { background: #334155; color: white; }
@@ -167,14 +148,7 @@
 <body>
 
 <header>
-    <div class="brand-section">
-        <!-- Python Logo SVG -->
-        <svg class="logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M24.05 4C18.17 4 18.52 6.55 18.52 6.55V9.16H24.23V9.95H16.14C16.14 9.95 10.3 10.45 10.3 16.27C10.3 22.1 14.88 22.33 14.88 22.33H17.43V18.78C17.43 18.78 17.27 14.48 21.67 14.48H29.76C29.76 14.48 33.86 14.28 33.86 10.51V6.95C33.86 6.95 34.25 4 24.05 4Z" fill="#3776AB"/>
-            <path d="M23.95 44C29.83 44 29.48 41.45 29.48 41.45V38.84H23.77V38.05H31.86C31.86 38.05 37.7 37.55 37.7 31.73C37.7 25.9 33.12 25.67 33.12 25.67H30.57V29.22C30.57 29.22 30.73 33.52 26.33 33.52H18.24C18.24 33.52 14.14 33.72 14.14 37.49V41.05C14.14 41.05 13.75 44 23.95 44Z" fill="#FFD43B"/>
-            <circle cx="16.5" cy="11.5" r="1.5" fill="white"/>
-            <circle cx="31.5" cy="36.5" r="1.5" fill="white"/>
-        </svg>
+    <div style="display: flex; align-items: center;">
         <h1>Python IDE</h1>
         <span id="status" class="status-indicator ready">READY</span>
     </div>
@@ -188,11 +162,11 @@
 
 <main>
     <div class="pane">
-        <div class="pane-label">Editor</div>
+        <div class="pane-header">Editor</div>
         <textarea id="editorTextarea"></textarea>
     </div>
     <div class="pane">
-        <div class="pane-label">Console</div>
+        <div class="pane-header">Console</div>
         <div id="consoleOutput" class="console-screen"></div>
     </div>
 </main>
@@ -214,38 +188,63 @@
         matchBrackets: true,
         indentWithTabs: false,
         extraKeys: {
-            "Ctrl-Enter": function(cm) { runBtn.click(); },
-            "Cmd-Enter": function(cm) { runBtn.click(); },
-            "Ctrl-S": function(cm) { saveBtn.click(); },
-            "Cmd-S": function(cm) { saveBtn.click(); }
+            "Ctrl-Enter": function(cm) {
+                runBtn.click();
+            },
+            "Cmd-Enter": function(cm) {
+                runBtn.click();
+            },
+            "Ctrl-S": function(cm) {
+                saveBtn.click();
+            },
+            "Cmd-S": function(cm) {
+                saveBtn.click();
+            }
         }
     });
 
-    const defaultCode = `# Welcome to your Python Playground!
-# Logic, loops, and math work here.
+    const complexExample = `# All Python features (if, loops, functions) are supported!
 import random
 
-def start():
-    print("PYTHON IDE ONLINE")
-    print("-----------------")
-    user = input("Identify yourself: ")
-    print(f"Greetings, {user}. System is ready.")
+def start_game():
+    print("--- WELCOME TO THE NUMBER QUEST ---")
+    print("(Use CTRL + ENTER to run)")
+    name = input("Enter your name: ")
+    print(f"Welcome, {name}! Let's see if you can win.")
     
-    # Example logic
-    secret = random.randint(1, 5)
-    guess = input("Guess a number between 1 and 5: ")
+    score = 0
+    rounds = 3
     
-    if guess == str(secret):
-        print("MATCH DETECTED. Access granted.")
+    for i in range(1, rounds + 1):
+        print(f"\\nRound {i} of {rounds}")
+        secret = random.randint(1, 10)
+        
+        try:
+            guess_str = input("Guess a number between 1 and 10: ")
+            guess = int(guess_str)
+            
+            if guess == secret:
+                print("Correct! You gain 10 points.")
+                score += 10
+            elif guess < secret:
+                print(f"Too low! The number was {secret}.")
+            else:
+                print(f"Too high! The number was {secret}.")
+        except ValueError:
+            print("That's not a number! Round lost.")
+
+    print("\\n--- GAME OVER ---")
+    if score >= 20:
+        print(f"Masterful! Final Score: {score}")
     else:
-        print(f"ERROR. Correct code was {secret}.")
+        print(f"Good effort! Final Score: {score}")
 
-start()`;
+start_game()`;
 
-    editor.setValue(localStorage.getItem('python_ide_code_v4') || defaultCode);
+    editor.setValue(localStorage.getItem('python_ide_code_v3') || complexExample);
 
     saveBtn.onclick = () => {
-        localStorage.setItem('python_ide_code_v4', editor.getValue());
+        localStorage.setItem('python_ide_code_v3', editor.getValue());
         const original = saveBtn.textContent;
         saveBtn.textContent = "Saved!";
         setTimeout(() => saveBtn.textContent = original, 1500);
@@ -298,7 +297,7 @@ start()`;
         output.innerHTML = "";
         runBtn.style.display = "none";
         stopBtn.style.display = "block";
-        status.textContent = "RUNNING";
+        status.textContent = "RUNNING...";
         status.className = "status-indicator running";
 
         if (worker) worker.terminate();
@@ -358,7 +357,7 @@ start()`;
     stopBtn.onclick = () => {
         if (worker) worker.terminate();
         resetUI();
-        printToConsole("\n[TERMINATED]");
+        printToConsole("\n[Execution Terminated]");
     };
 
     clearBtn.onclick = () => { output.innerHTML = ""; };
