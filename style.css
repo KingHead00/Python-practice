@@ -1,99 +1,138 @@
 :root {
-    --bg-dark: #0b1020;
-    --panel-color: #0f172a;
-    --border-color: #1f2933;
-    --text-primary: #e5e7eb;
-    --accent-blue: #38bdf8;
-    --error-red: #f87171;
-    --success-green: #22c55e;
+    --bg-main: #0a0e17;
+    --panel-bg: #0f172a;
+    --header-bg: #1e293b;
+    --border: #334155;
+    --text-main: #f8fafc;
+    --text-dim: #94a3b8;
+    --accent: #38bdf8;
+    --accent-glow: rgba(56, 189, 248, 0.2);
+    --success: #22c55e;
+    --error: #f43f5e;
 }
 
 * { box-sizing: border-box; }
 
 body {
     margin: 0;
-    padding: 0;
-    font-family: system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
     height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-/* FIX: Removes the "White Box" ghost before editor loads */
+/* FIX: Force immediate dark background for CodeMirror & Textarea */
 textarea,.CodeMirror,.console-screen {
-    background-color: var(--bg-dark)!important;
-    color: var(--text-primary)!important;
+    background-color: #1e1e1e!important;
+    color: var(--text-main)!important;
     border: none!important;
     outline: none!important;
 }
 
+/* Header Styling */
 header {
-    padding: 10px 20px;
-    background: var(--panel-color);
-    border-bottom: 1px solid var(--border-color);
+    height: 65px;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10;
 }
 
-h1 { margin: 0; font-size: 18px; color: var(--accent-blue); }
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo { font-size: 24px; filter: drop-shadow(0 0 8px var(--accent)); }
+.brand-text h1 { margin: 0; font-size: 16px; letter-spacing: 0.5px; color: var(--accent); }
 
-.status-indicator { font-size: 11px; font-weight: bold; }
-.ready { color: var(--success-green); }
-.error { color: var(--error-red); }
+.status-indicator { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); }
+.status-indicator.ready { color: var(--success); }
+.status-indicator.error { color: var(--error); }
 
-.controls button {
-    margin-left: 8px;
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: none;
-    font-weight: bold;
+/* Buttons */
+.controls { display: flex; gap: 10px; }
+button {
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-weight: 700;
+    font-size: 13px;
     cursor: pointer;
-    background: var(--accent-blue);
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
 }
 
-.controls button:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-run { background: var(--accent); color: #0f172a; }
+.btn-run:hover:not(:disabled) { box-shadow: 0 0 15px var(--accent-glow); transform: translateY(-1px); }
+.btn-stop { background: transparent; color: var(--error); border: 1px solid var(--error); }
+.btn-stop:hover:not(:disabled) { background: var(--error); color: white; }
+.btn-muted { background: #334155; color: var(--text-dim); }
+button:disabled { opacity: 0.2; cursor: not-allowed; }
 
+/* Main Layout */
 main {
     flex: 1;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 10px;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-main);
 }
 
-.editor-pane,.console-pane {
-    background: var(--panel-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-.pane-label {
-    padding: 6px 12px;
-    font-size: 10px;
-    color: #94a3b8;
-    background: rgba(0,0,0,0.3);
-    border-bottom: 1px solid var(--border-color);
+.panel-header {
+    background: #111827;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
 }
 
+.tab {
+    padding: 0 16px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    border-right: 1px solid var(--border);
+}
+
+.tab.active { background: var(--panel-bg); color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+/* Editor & Console specific fixes */
+.editor-container { flex: 1; overflow: hidden; }
 .console-screen {
     flex: 1;
-    padding: 10px;
-    font-family: 'Fira Code', monospace;
+    padding: 15px;
+    font-family: 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 14px;
+    line-height: 1.6;
     overflow-y: auto;
-    white-space: pre-wrap;
+    background: #020617!important;
 }
 
-/* Style for the Python input line */
+/* Console Input */
 .console-input-line {
     display: inline-block;
-    border-bottom: 2px solid var(--accent-blue);
-    min-width: 20px;
+    border-bottom: 2px solid var(--accent);
+    background: rgba(56, 189, 248, 0.1);
+    min-width: 12px;
+    color: var(--accent);
     outline: none;
+    padding: 0 2px;
 }
+
+@media (max-width: 900px) { main { grid-template-columns: 1fr; } }
