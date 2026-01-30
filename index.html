@@ -1,290 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title>MyPythonLab — Classic Design</title>
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css](https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css)">
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css](https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css)">
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python IDE - Extended View</title>
+    <!-- Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #0b1020;
+            --panel-color: #0f172a;
+            --border-color: #1f2933;
+            --text-primary: #e5e7eb;
+            --accent-blue: #38bdf8;
+            --error-red: #f87171;
+            --success-green: #22c55e;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Immediate dark styling to prevent white flash */
+        textarea, .CodeMirror, .console-screen {
+            background-color: #020617 !important;
+            color: var(--text-primary) !important;
+        }
+
+        header {
+            padding: 10px 20px;
+            background: var(--panel-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--accent-blue);
+            text-shadow: none; /* Removed glow */
+        }
+
+        .status-indicator {
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .ready { color: var(--success-green); }
+        .error { color: var(--error-red); }
+
+        .controls button {
+            margin-left: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            background: var(--accent-blue);
+            color: #0f172a;
+            transition: opacity 0.2s;
+        }
+
+        .controls button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .secondary-btn {
+            background: #334155 !important;
+            color: white !important;
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0; /* Removed gap between panes */
+            padding: 0; /* Extended to edges */
+        }
+
+        .editor-pane, .console-pane {
+            background: var(--panel-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .pane-label {
+            padding: 8px 12px;
+            font-size: 10px;
+            letter-spacing: 1px;
+            font-weight: 800;
+            color: #94a3b8;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+        }
+
+        .CodeMirror {
+            flex: 1;
+            height: 100% !important;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+        }
+
+        .console-screen {
+            flex: 1;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            background-color: #020617 !important;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .console-input-line {
+            display: inline-block;
+            border-bottom: 2px solid var(--accent-blue);
+            min-width: 10px;
+            outline: none;
+            color: var(--accent-blue);
+            background: transparent;
+        }
+
+        .log-entry { margin-bottom: 4px; }
+    </style>
 </head>
 <body>
 
 <header>
-    <div class="brand">
-        <h1>🐍 MyPythonLab</h1>
-        <span id="status" class="status-indicator">SYSTEM BOOTING...</span>
+    <div style="display: flex; align-items: center;">
+        <h1>Python IDE</h1>
+        <span style="margin-left: 20px;" id="status" class="status-indicator">LOADING ENGINE...</span>
     </div>
     <div class="controls">
-        <button id="runBtn" disabled>▶ Run</button>
-        <button id="stopBtn" disabled>⏹ Stop</button>
-        <button id="clearBtn">Clear</button>
+        <button id="clearBtn" class="secondary-btn">Clear</button>
+        <button id="stopBtn" class="secondary-btn" disabled>Stop</button>
+        <button id="runBtn" disabled title="Ctrl + Enter">Run Code</button>
     </div>
 </header>
 
 <main>
     <div class="editor-pane">
-        <div class="pane-label">PYTHON EDITOR (CTRL + ENTER)</div>
-        <textarea id="editorTextarea"></textarea>
+        <div class="pane-label">Editor</div>
+        <textarea id="editorTextarea"># Try typing something like:
+name = input("What is your name? ")
+print(f"Hello, {name}!")</textarea>
     </div>
     <div class="console-pane">
-        <div class="pane-label">INTERACTIVE CONSOLE</div>
+        <div class="pane-label">Console</div>
         <div id="consoleOutput" class="console-screen"></div>
     </div>
 </main>
 
-<script src="[https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js](https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js)"></script>
-<script src="[https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js](https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js)"></script>
-<script src="script.js"></script>
-</body>
-</html>
+<script>
+    const output = document.getElementById("consoleOutput");
+    const status = document.getElementById("status");
+    const runBtn = document.getElementById("runBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const clearBtn = document.getElementById("clearBtn");
 
-:root {
-    --bg-dark: #0b1020;
-    --panel-color: #0f172a;
-    --border-color: #1f2933;
-    --text-primary: #e5e7eb;
-    --accent-blue: #38bdf8;
-    --error-red: #f87171;
-    --success-green: #22c55e;
-}
-
-* { box-sizing: border-box; }
-
-body {
-    margin: 0;
-    padding: 0;
-    font-family: system-ui, sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--text-primary);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-/* FIX: Removes white box flash by making everything dark immediately */
-textarea,.CodeMirror,.console-screen {
-    background-color: var(--bg-dark)!important;
-    color: var(--text-primary)!important;
-    border: none!important;
-    outline: none!important;
-}
-
-header {
-    padding: 10px 20px;
-    background: var(--panel-color);
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-h1 { margin: 0; font-size: 18px; color: var(--accent-blue); }
-
-.status-indicator { font-size: 11px; font-weight: bold; }
-.ready { color: var(--success-green); }
-.error { color: var(--error-red); }
-
-.controls button {
-    margin-left: 8px;
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: none;
-    font-weight: bold;
-    cursor: pointer;
-    background: var(--accent-blue);
-    color: #0f172a;
-}
-
-.controls button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-main {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 10px 10px 0 10px; /* Extended to bottom by removing bottom padding */
-}
-
-.editor-pane,.console-pane {
-    background: var(--panel-color);
-    border: 1px solid var(--border-color);
-    border-bottom: none; /* Extending to the bottom edge */
-    border-radius: 8px 8px 0 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    height: 100%;
-}
-
-.pane-label {
-    padding: 6px 12px;
-    font-size: 10px;
-    font-weight: 800;
-    color: #94a3b8;
-    background: rgba(0,0,0,0.3);
-    border-bottom: 1px solid var(--border-color);
-}
-
-/* Editor takes up all space in the pane */
-.CodeMirror {
-    flex: 1;
-    height: 100%!important; 
-}
-
-.console-screen {
-    flex: 1;
-    padding: 15px;
-    font-family: 'Fira Code', monospace;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    background-color: #020617!important;
-}
-
-.console-input-line {
-    display: inline-block;
-    border-bottom: 2px solid var(--accent-blue);
-    min-width: 20px;
-    outline: none;
-    color: var(--accent-blue);
-}
-
-const output = document.getElementById("consoleOutput");
-const status = document.getElementById("status");
-const runBtn = document.getElementById("runBtn");
-const stopBtn = document.getElementById("stopBtn");
-
-// 1. Diagnostic Logger
-function log(msg, isError = false) {
-    const div = document.createElement("div");
-    div.style.color = isError? "var(--error-red)" : "#94a3b8";
-    div.style.fontSize = "12px";
-    div.textContent = "> " + msg;
-    output.appendChild(div);
-    output.scrollTop = output.scrollHeight;
-}
-
-// 2. Initialize Editor with Ctrl+Enter shortcut
-const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
-    mode: "python",
-    theme: "dracula",
-    lineNumbers: true,
-    extraKeys: {
-        "Ctrl-Enter": () => runBtn.click(),
-        "Cmd-Enter": () => runBtn.click()
+    function log(msg, isError = false) {
+        const div = document.createElement("div");
+        div.className = "log-entry";
+        div.style.color = isError ? "var(--error-red)" : "#64748b";
+        div.textContent = (isError ? "✖ " : "> ") + msg;
+        output.appendChild(div);
+        output.scrollTop = output.scrollHeight;
     }
-});
 
-// 3. Setup Shared Memory [2, 3]
-let sab, sInt32, sUint8, worker = null;
-
-if (typeof SharedArrayBuffer === "undefined") {
-    status.textContent = "SECURITY ERROR";
-    status.className = "status-indicator error";
-    log("CRITICAL: SharedArrayBuffer is blocked. Ensure vercel.json is in your root folder and redeploy.", true);
-} else {
-    sab = new SharedArrayBuffer(1024 * 64); 
-    sInt32 = new Int32Array(sab);
-    sUint8 = new Uint8Array(sab);
-    status.textContent = "READY";
-    status.className = "status-indicator ready";
-    runBtn.disabled = false;
-    log("Engine ready.");
-}
-
-// 4. Handle Stdin Input [4]
-function handleStdinRequest() {
-    const inputLine = document.createElement("span");
-    inputLine.className = "console-input-line";
-    inputLine.contentEditable = "true";
-    output.appendChild(inputLine);
-    inputLine.focus();
-
-    inputLine.onkeydown = (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            const val = inputLine.textContent + "\n";
-            inputLine.contentEditable = "false";
-            inputLine.style.border = "none";
-            
-            const encoded = new TextEncoder().encode(val);
-            sUint8.set(encoded, 8); 
-            sInt32[1] = encoded.length;
-            Atomics.store(sInt32, 0, 1); 
-            Atomics.notify(sInt32, 0);
-            output.appendChild(document.createElement("br"));
+    // Initialize CodeMirror
+    const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
+        mode: "python",
+        theme: "dracula",
+        lineNumbers: true,
+        indentUnit: 4,
+        extraKeys: {
+            "Ctrl-Enter": () => { runBtn.click(); },
+            "Cmd-Enter": () => { runBtn.click(); }
         }
-    };
-}
+    });
 
-// 5. Worker Logic [5, 6]
-runBtn.onclick = () => {
-    output.innerHTML = "";
-    runBtn.disabled = true;
-    stopBtn.disabled = false;
-    status.textContent = "RUNNING...";
+    // Setup Shared Memory for Stdin
+    let sab, sInt32, sUint8, worker = null;
 
-    if (worker) worker.terminate();
-
-    const workerCode = `
-        importScripts("[https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js](https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js)");
-        let pyodide, sInt32, sUint8;
-
-        self.onmessage = async (e) => {
-            const { code, sab } = e.data;
+    try {
+        if (typeof SharedArrayBuffer === "undefined") {
+            status.textContent = "SECURITY ERROR";
+            status.className = "status-indicator error";
+            log("CRITICAL: SharedArrayBuffer is blocked. Verify Headers (COOP/COEP).", true);
+        } else {
+            sab = new SharedArrayBuffer(1024 * 64);
             sInt32 = new Int32Array(sab);
             sUint8 = new Uint8Array(sab);
-
-            if (!pyodide) {
-                pyodide = await loadPyodide();
-                pyodide.setStdout({ batched: (s) => self.postMessage({ type: "out", text: s }) });
-                pyodide.setStdin({
-                    read(buffer) {
-                        self.postMessage({ type: "stdin" });
-                        Atomics.wait(sInt32, 0, 0); 
-                        const len = sInt32[1];
-                        buffer.set(sUint8.slice(8, 8 + len));
-                        Atomics.store(sInt32, 0, 0);
-                        return len;
-                    }
-                });
-            }
-
-            try {
-                await pyodide.runPythonAsync(code);
-            } catch (err) {
-                self.postMessage({ type: "out", text: err.toString() });
-            }
-            self.postMessage({ type: "done" });
-        };
-    `;
-
-    worker = new Worker(URL.createObjectURL(new Blob([workerCode], {type: 'application/javascript'})));
-    
-    worker.onmessage = (e) => {
-        if (e.data.type === "out") {
-            const span = document.createElement("span");
-            span.textContent = e.data.text;
-            output.appendChild(span);
+            status.textContent = "READY";
+            status.className = "status-indicator ready";
+            runBtn.disabled = false;
         }
-        if (e.data.type === "stdin") handleStdinRequest();
-        if (e.data.type === "done") resetUI();
+    } catch (e) {
+        log("Initialization error: " + e.message, true);
+    }
+
+    function handleStdinRequest() {
+        const inputLine = document.createElement("span");
+        inputLine.className = "console-input-line";
+        inputLine.contentEditable = "true";
+        output.appendChild(inputLine);
+        inputLine.focus();
+
+        inputLine.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const val = inputLine.textContent + "\n";
+                inputLine.contentEditable = "false";
+                inputLine.style.border = "none";
+                
+                const encoded = new TextEncoder().encode(val);
+                sUint8.set(encoded, 8);
+                sInt32[1] = encoded.length;
+                Atomics.store(sInt32, 0, 1);
+                Atomics.notify(sInt32, 0);
+                output.appendChild(document.createElement("br"));
+            }
+        };
+    }
+
+    runBtn.onclick = () => {
+        output.innerHTML = "";
+        runBtn.disabled = true;
+        stopBtn.disabled = false;
+        status.textContent = "RUNNING...";
+        
+        if (worker) worker.terminate();
+
+        const workerBlob = new Blob([`
+            importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js");
+            let pyodide, sInt32, sUint8;
+
+            self.onmessage = async (e) => {
+                const { code, sab } = e.data;
+                sInt32 = new Int32Array(sab);
+                sUint8 = new Uint8Array(sab);
+
+                try {
+                    if (!pyodide) {
+                        pyodide = await loadPyodide();
+                        pyodide.setStdout({ batched: (s) => self.postMessage({ type: "out", text: s }) });
+                        pyodide.setStdin({
+                            read(buffer) {
+                                self.postMessage({ type: "stdin" });
+                                Atomics.wait(sInt32, 0, 0);
+                                const len = sInt32[1];
+                                buffer.set(sUint8.slice(8, 8 + len));
+                                Atomics.store(sInt32, 0, 0);
+                                return len;
+                            }
+                        });
+                    }
+                    await pyodide.runPythonAsync(code);
+                } catch (err) {
+                    self.postMessage({ type: "out", text: "\\n" + err.toString() });
+                }
+                self.postMessage({ type: "done" });
+            };
+        `], { type: 'application/javascript' });
+
+        worker = new Worker(URL.createObjectURL(workerBlob));
+        
+        worker.onmessage = (e) => {
+            if (e.data.type === "out") {
+                const textNode = document.createTextNode(e.data.text);
+                output.appendChild(textNode);
+                output.scrollTop = output.scrollHeight;
+            } else if (e.data.type === "stdin") {
+                handleStdinRequest();
+            } else if (e.data.type === "done") {
+                resetUI();
+            }
+        };
+
+        worker.postMessage({ code: editor.getValue(), sab: sab });
     };
 
-    worker.postMessage({ code: editor.getValue(), sab: sab });
-};
+    function resetUI() {
+        runBtn.disabled = false;
+        stopBtn.disabled = true;
+        status.textContent = "READY";
+        status.className = "status-indicator ready";
+    }
 
-function resetUI() {
-    runBtn.disabled = false;
-    stopBtn.disabled = true;
-    status.textContent = "READY";
-}
+    stopBtn.onclick = () => {
+        if (worker) worker.terminate();
+        worker = null;
+        resetUI();
+        log("Process terminated.", true);
+    };
 
-stopBtn.onclick = () => {
-    if (worker) worker.terminate();
-    worker = null;
-    resetUI();
-    log("Stopped.", true);
-};
+    clearBtn.onclick = () => {
+        output.innerHTML = "";
+    };
+</script>
 
-document.getElementById("clearBtn").onclick = () => output.innerHTML = "";
+</body>
+</html>
