@@ -186,14 +186,29 @@
         indentUnit: 4,
         autoCloseBrackets: true,
         matchBrackets: true,
-        indentWithTabs: false
+        indentWithTabs: false,
+        extraKeys: {
+            "Ctrl-Enter": function(cm) {
+                runBtn.click();
+            },
+            "Cmd-Enter": function(cm) {
+                runBtn.click();
+            },
+            "Ctrl-S": function(cm) {
+                saveBtn.click();
+            },
+            "Cmd-S": function(cm) {
+                saveBtn.click();
+            }
+        }
     });
 
-    const complexExample = `# Complex Python Demo: Logic, Loops, and Math
+    const complexExample = `# All Python features (if, loops, functions) are supported!
 import random
 
 def start_game():
     print("--- WELCOME TO THE NUMBER QUEST ---")
+    print("(Use CTRL + ENTER to run)")
     name = input("Enter your name: ")
     print(f"Welcome, {name}! Let's see if you can win.")
     
@@ -205,7 +220,8 @@ def start_game():
         secret = random.randint(1, 10)
         
         try:
-            guess = int(input("Guess a number between 1 and 10: "))
+            guess_str = input("Guess a number between 1 and 10: ")
+            guess = int(guess_str)
             
             if guess == secret:
                 print("Correct! You gain 10 points.")
@@ -220,10 +236,8 @@ def start_game():
     print("\\n--- GAME OVER ---")
     if score >= 20:
         print(f"Masterful! Final Score: {score}")
-    elif score > 0:
-        print(f"Good job. Final Score: {score}")
     else:
-        print("Better luck next time!")
+        print(f"Good effort! Final Score: {score}")
 
 start_game()`;
 
