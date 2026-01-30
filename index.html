@@ -19,6 +19,7 @@
             --accent-blue: #38bdf8;
             --error-red: #f87171;
             --success-green: #22c55e;
+            --save-green: #10b981;
         }
 
         * { box-sizing: border-box; }
@@ -66,8 +67,12 @@
         .ready { color: var(--success-green); }
         .error { color: var(--error-red); }
 
+        .controls {
+            display: flex;
+            gap: 8px;
+        }
+
         .controls button {
-            margin-left: 8px;
             padding: 8px 16px;
             border-radius: 6px;
             border: none;
@@ -75,7 +80,7 @@
             cursor: pointer;
             background: var(--accent-blue);
             color: #0f172a;
-            transition: opacity 0.2s;
+            transition: all 0.2s;
         }
 
         .controls button:disabled {
@@ -88,18 +93,27 @@
             color: white !important;
         }
 
+        #saveBtn {
+            background: var(--save-green);
+            color: white;
+        }
+
+        #saveBtn.saved {
+            background: #059669;
+        }
+
         main {
             flex: 1;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px; /* Added gap between editor and console */
-            padding: 15px; /* Added padding around the panes */
+            gap: 15px;
+            padding: 15px;
         }
 
         .editor-pane, .console-pane {
             background: var(--panel-color);
-            border: 1px solid var(--border-color); /* Added full border */
-            border-radius: 12px; /* Added rounded corners */
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -155,6 +169,7 @@
         <span style="margin-left: 20px;" id="status" class="status-indicator">LOADING ENGINE...</span>
     </div>
     <div class="controls">
+        <button id="saveBtn">Save</button>
         <button id="clearBtn" class="secondary-btn">Clear</button>
         <button id="stopBtn" class="secondary-btn" disabled>Stop</button>
         <button id="runBtn" disabled title="Ctrl + Enter">Run Code</button>
@@ -180,6 +195,7 @@ print(f"Hello, {name}!")</textarea>
     const runBtn = document.getElementById("runBtn");
     const stopBtn = document.getElementById("stopBtn");
     const clearBtn = document.getElementById("clearBtn");
+    const saveBtn = document.getElementById("saveBtn");
 
     function log(msg, isError = false) {
         const div = document.createElement("div");
@@ -197,9 +213,28 @@ print(f"Hello, {name}!")</textarea>
         indentUnit: 4,
         extraKeys: {
             "Ctrl-Enter": () => { runBtn.click(); },
-            "Cmd-Enter": () => { runBtn.click(); }
+            "Cmd-Enter": () => { runBtn.click(); },
+            "Ctrl-S": (cm) => { saveBtn.click(); }
         }
     });
+
+    // Load saved code on startup
+    const savedCode = localStorage.getItem('python_ide_code');
+    if (savedCode) {
+        editor.setValue(savedCode);
+    }
+
+    // Save functionality
+    saveBtn.onclick = () => {
+        localStorage.setItem('python_ide_code', editor.getValue());
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = "Saved!";
+        saveBtn.classList.add('saved');
+        setTimeout(() => {
+            saveBtn.textContent = originalText;
+            saveBtn.classList.remove('saved');
+        }, 2000);
+    };
 
     let sab, sInt32, sUint8, worker = null;
 
