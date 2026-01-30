@@ -1,0 +1,99 @@
+:root {
+    --bg-dark: #0b1020;
+    --panel-color: #0f172a;
+    --border-color: #1f2933;
+    --text-primary: #e5e7eb;
+    --accent-blue: #38bdf8;
+    --error-red: #f87171;
+    --success-green: #22c55e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* FIX: Removes the "White Box" ghost before editor loads */
+textarea,.CodeMirror,.console-screen {
+    background-color: var(--bg-dark)!important;
+    color: var(--text-primary)!important;
+    border: none!important;
+    outline: none!important;
+}
+
+header {
+    padding: 10px 20px;
+    background: var(--panel-color);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 { margin: 0; font-size: 18px; color: var(--accent-blue); }
+
+.status-indicator { font-size: 11px; font-weight: bold; }
+.ready { color: var(--success-green); }
+.error { color: var(--error-red); }
+
+.controls button {
+    margin-left: 8px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    background: var(--accent-blue);
+}
+
+.controls button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 10px;
+}
+
+.editor-pane,.console-pane {
+    background: var(--panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pane-label {
+    padding: 6px 12px;
+    font-size: 10px;
+    color: #94a3b8;
+    background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.console-screen {
+    flex: 1;
+    padding: 10px;
+    font-family: 'Fira Code', monospace;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* Style for the Python input line */
+.console-input-line {
+    display: inline-block;
+    border-bottom: 2px solid var(--accent-blue);
+    min-width: 20px;
+    outline: none;
+}
