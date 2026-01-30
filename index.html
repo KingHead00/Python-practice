@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python IDE - Extended View</title>
+    <title>Python IDE - Rounded View</title>
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
@@ -35,7 +35,6 @@
             overflow: hidden;
         }
 
-        /* Immediate dark styling to prevent white flash */
         textarea, .CodeMirror, .console-screen {
             background-color: #020617 !important;
             color: var(--text-primary) !important;
@@ -55,7 +54,7 @@
             margin: 0;
             font-size: 18px;
             color: var(--accent-blue);
-            text-shadow: none; /* Removed glow */
+            text-shadow: none;
         }
 
         .status-indicator {
@@ -93,13 +92,14 @@
             flex: 1;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 0; /* Removed gap between panes */
-            padding: 0; /* Extended to edges */
+            gap: 15px; /* Added gap between editor and console */
+            padding: 15px; /* Added padding around the panes */
         }
 
         .editor-pane, .console-pane {
             background: var(--panel-color);
-            border-right: 1px solid var(--border-color);
+            border: 1px solid var(--border-color); /* Added full border */
+            border-radius: 12px; /* Added rounded corners */
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -190,7 +190,6 @@ print(f"Hello, {name}!")</textarea>
         output.scrollTop = output.scrollHeight;
     }
 
-    // Initialize CodeMirror
     const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
         mode: "python",
         theme: "dracula",
@@ -202,14 +201,13 @@ print(f"Hello, {name}!")</textarea>
         }
     });
 
-    // Setup Shared Memory for Stdin
     let sab, sInt32, sUint8, worker = null;
 
     try {
         if (typeof SharedArrayBuffer === "undefined") {
             status.textContent = "SECURITY ERROR";
             status.className = "status-indicator error";
-            log("CRITICAL: SharedArrayBuffer is blocked. Verify Headers (COOP/COEP).", true);
+            log("CRITICAL: SharedArrayBuffer is blocked.", true);
         } else {
             sab = new SharedArrayBuffer(1024 * 64);
             sInt32 = new Int32Array(sab);
