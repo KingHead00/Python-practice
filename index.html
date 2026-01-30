@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python IDE - Rounded View</title>
-    <!-- Dependencies -->
+    <title>Python IDE - Professional</title>
+    <!-- CodeMirror for Syntax Highlighting -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
@@ -15,11 +15,12 @@
             --bg-dark: #0b1020;
             --panel-color: #0f172a;
             --border-color: #1f2933;
-            --text-primary: #e5e7eb;
-            --accent-blue: #38bdf8;
+            --text-primary: #f8fafc;
+            --accent-bluea: #38bdf8;
             --error-red: #f87171;
             --success-green: #22c55e;
             --save-green: #10b981;
+            --console-bg: #020617;
         }
 
         * { box-sizing: border-box; }
@@ -27,7 +28,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: system-ui, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-primary);
             height: 100vh;
@@ -36,162 +37,159 @@
             overflow: hidden;
         }
 
-        textarea, .CodeMirror, .console-screen {
-            background-color: #020617 !important;
-            color: var(--text-primary) !important;
-        }
-
         header {
-            padding: 10px 20px;
+            padding: 12px 24px;
             background: var(--panel-color);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 10;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
         h1 {
             margin: 0;
-            font-size: 18px;
+            font-size: 1.2rem;
+            font-weight: 700;
             color: var(--accent-blue);
-            text-shadow: none;
         }
 
-        .status-indicator {
-            font-size: 11px;
-            font-weight: bold;
-            margin-right: 15px;
+        .status-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .ready { color: var(--success-green); }
-        .error { color: var(--error-red); }
+        .status-ready { color: var(--success-green); }
+        .status-running { color: var(--accent-blue); animation: pulse 1.5s infinite; }
+        .status-error { color: var(--error-red); }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
 
         .controls {
             display: flex;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .controls button {
-            padding: 8px 16px;
+        button {
+            padding: 8px 18px;
             border-radius: 6px;
-            border: none;
-            font-weight: bold;
+            border: 1px solid transparent;
+            font-weight: 600;
             cursor: pointer;
-            background: var(--accent-blue);
-            color: #0f172a;
             transition: all 0.2s;
+            font-size: 13px;
         }
 
-        .controls button:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
+        .btn-run { background: var(--accent-blue); color: #020617; }
+        .btn-run:hover { background: #7dd3fc; }
+        .btn-run:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .secondary-btn {
-            background: #334155 !important;
-            color: white !important;
-        }
+        .btn-secondary { background: #334155; color: white; border-color: #475569; }
+        .btn-secondary:hover { background: #475569; }
 
-        #saveBtn {
-            background: var(--save-green);
-            color: white;
-        }
+        .btn-stop { background: #7f1d1d; color: white; border-color: #991b1b; }
+        .btn-stop:hover { background: #991b1b; }
 
-        #saveBtn.saved {
-            background: #059669;
-        }
+        .btn-save { background: var(--save-green); color: white; }
+        .btn-save.saved { background: #059669; }
 
         main {
             flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            display: flex;
             padding: 15px;
+            gap: 15px;
+            height: calc(100vh - 60px);
         }
 
-        .editor-pane, .console-pane {
-            background: var(--panel-color);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+        .pane {
+            flex: 1;
             display: flex;
             flex-direction: column;
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             overflow: hidden;
-            height: 100%;
         }
 
-        .pane-label {
-            padding: 8px 12px;
-            font-size: 10px;
-            letter-spacing: 1px;
-            font-weight: 800;
-            color: #94a3b8;
-            background: rgba(0,0,0,0.4);
+        .pane-header {
+            padding: 8px 16px;
+            background: rgba(0,0,0,0.2);
             border-bottom: 1px solid var(--border-color);
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
+        /* Editor Overrides */
         .CodeMirror {
             flex: 1;
             height: 100% !important;
-            font-family: 'Fira Code', monospace;
+            font-family: 'Fira Code', 'Consolas', monospace;
             font-size: 14px;
         }
 
-        .console-screen {
+        .console-container {
             flex: 1;
-            padding: 15px;
-            font-family: 'Fira Code', monospace;
+            background: var(--console-bg);
+            padding: 12px;
             overflow-y: auto;
-            white-space: pre-wrap;
-            background-color: #020617 !important;
-            font-size: 13px;
-            line-height: 1.5;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #d1d5db;
         }
 
-        .console-input-line {
+        .log-line { margin-bottom: 2px; }
+        .input-request { display: inline; color: #fbbf24; }
+        .input-cursor {
             display: inline-block;
+            min-width: 10px;
             border-bottom: 2px solid var(--accent-blue);
-            min-width: 15px;
             outline: none;
-            color: var(--accent-blue);
-            background: transparent;
-            padding: 0 4px;
-        }
-
-        .log-entry { margin-bottom: 4px; }
-        
-        .input-prompt {
-            color: var(--text-primary);
-            margin-right: 4px;
+            padding: 0 2px;
+            color: white;
+            background: rgba(56, 189, 248, 0.1);
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="display: flex; align-items: center;">
+    <div class="logo-section">
         <h1>Python IDE</h1>
-        <span style="margin-left: 20px;" id="status" class="status-indicator">LOADING ENGINE...</span>
+        <span id="status" class="status-badge status-ready">Loading Pyodide...</span>
     </div>
     <div class="controls">
-        <button id="saveBtn">Save</button>
-        <button id="clearBtn" class="secondary-btn">Clear</button>
-        <button id="stopBtn" class="secondary-btn" disabled>Stop</button>
-        <button id="runBtn" disabled title="Ctrl + Enter">Run Code</button>
+        <button id="saveBtn" class="btn-save">Save</button>
+        <button id="clearBtn" class="btn-secondary">Clear</button>
+        <button id="stopBtn" class="btn-stop" style="display:none">Stop</button>
+        <button id="runBtn" class="btn-run" disabled>Run Code</button>
     </div>
 </header>
 
 <main>
-    <div class="editor-pane">
-        <div class="pane-label">Editor</div>
-        <textarea id="editorTextarea"># Try typing something like:
-name = input("What is your name? ")
-print(f"hello, {name}!")</textarea>
+    <div class="pane">
+        <div class="pane-header">Editor</div>
+        <textarea id="editorTextarea"></textarea>
     </div>
-    <div class="console-pane">
-        <div class="pane-label">Console</div>
-        <div id="consoleOutput" class="console-screen"></div>
+    <div class="pane">
+        <div class="pane-header">Console</div>
+        <div id="consoleOutput" class="console-container"></div>
     </div>
 </main>
 
@@ -203,127 +201,127 @@ print(f"hello, {name}!")</textarea>
     const clearBtn = document.getElementById("clearBtn");
     const saveBtn = document.getElementById("saveBtn");
 
-    function log(msg, isError = false) {
-        const div = document.createElement("div");
-        div.className = "log-entry";
-        div.style.color = isError ? "var(--error-red)" : "#64748b";
-        div.textContent = (isError ? "✖ " : "> ") + msg;
-        output.appendChild(div);
-        output.scrollTop = output.scrollHeight;
-    }
-
+    // Initialize CodeMirror with Dracula theme
     const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
         mode: "python",
         theme: "dracula",
         lineNumbers: true,
         indentUnit: 4,
+        matchBrackets: true,
+        autoCloseBrackets: true,
         extraKeys: {
-            "Ctrl-Enter": () => { runBtn.click(); },
-            "Cmd-Enter": () => { runBtn.click(); },
-            "Ctrl-S": (cm) => { saveBtn.click(); }
+            "Ctrl-Enter": () => runBtn.click(),
+            "Cmd-Enter": () => runBtn.click(),
+            "Ctrl-S": () => saveBtn.click()
         }
     });
 
-    const savedCode = localStorage.getItem('python_ide_code');
-    if (savedCode) {
-        editor.setValue(savedCode);
-    }
+    const defaultCode = `name = input("Hello? What is your name? ")\nprint(f"Oh your name is {name}? Thats a nice name")`;
+    editor.setValue(localStorage.getItem('python_ide_code') || defaultCode);
 
     saveBtn.onclick = () => {
         localStorage.setItem('python_ide_code', editor.getValue());
-        const originalText = saveBtn.textContent;
         saveBtn.textContent = "Saved!";
         saveBtn.classList.add('saved');
         setTimeout(() => {
-            saveBtn.textContent = originalText;
+            saveBtn.textContent = "Save";
             saveBtn.classList.remove('saved');
         }, 2000);
     };
 
-    let sab, sInt32, sUint8, worker = null;
-    let pendingOutput = ""; 
+    let worker = null;
+    let sab, sInt32, sUint8;
+    let bufferedText = "";
 
+    // Setup SharedArrayBuffer for blocking input
     try {
-        if (typeof SharedArrayBuffer === "undefined") {
-            status.textContent = "SECURITY ERROR";
-            status.className = "status-indicator error";
-            log("CRITICAL: SharedArrayBuffer is blocked.", true);
-        } else {
-            sab = new SharedArrayBuffer(1024 * 64);
-            sInt32 = new Int32Array(sab);
-            sUint8 = new Uint8Array(sab);
-            status.textContent = "READY";
-            status.className = "status-indicator ready";
-            runBtn.disabled = false;
-        }
+        sab = new SharedArrayBuffer(1024 * 64);
+        sInt32 = new Int32Array(sab);
+        sUint8 = new Uint8Array(sab);
+        status.textContent = "Ready";
+        runBtn.disabled = false;
     } catch (e) {
-        log("Initialization error: " + e.message, true);
+        status.textContent = "SAB Error";
+        status.className = "status-badge status-error";
+        console.error(e);
     }
 
-    function handleStdinRequest() {
-        const line = document.createElement("div");
-        line.className = "log-entry";
-        
-        // Use the accumulated pending output as the prompt text
-        const promptSpan = document.createElement("span");
-        promptSpan.className = "input-prompt";
-        promptSpan.textContent = pendingOutput || ""; 
-        pendingOutput = ""; // Reset after use
-        
-        const inputLine = document.createElement("span");
-        inputLine.className = "console-input-line";
-        inputLine.contentEditable = "true";
-        
-        line.appendChild(promptSpan);
-        line.appendChild(inputLine);
-        output.appendChild(line);
-        
-        // Auto-scroll and focus
+    function appendToConsole(text, isError = false) {
+        const span = document.createElement("span");
+        if (isError) span.style.color = "var(--error-red)";
+        span.textContent = text;
+        output.appendChild(span);
         output.scrollTop = output.scrollHeight;
-        inputLine.focus();
+    }
 
-        inputLine.onkeydown = (e) => {
+    function handleInputRequest() {
+        // Flush any buffered text (the question) before creating the input field
+        if (bufferedText) {
+            appendToConsole(bufferedText);
+            bufferedText = "";
+        }
+
+        const container = document.createElement("div");
+        container.className = "input-request";
+        
+        const inputField = document.createElement("span");
+        inputField.className = "input-cursor";
+        inputField.contentEditable = "true";
+        
+        container.appendChild(inputField);
+        output.appendChild(container);
+        inputField.focus();
+
+        inputField.onkeydown = (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
-                const val = inputLine.textContent + "\n";
-                inputLine.contentEditable = "false";
-                inputLine.style.border = "none";
+                const val = inputField.textContent + "\n";
+                inputField.contentEditable = "false";
+                inputField.classList.remove("input-cursor");
                 
+                // Signal the worker
                 const encoded = new TextEncoder().encode(val);
                 sUint8.set(encoded, 8);
                 sInt32[1] = encoded.length;
                 Atomics.store(sInt32, 0, 1);
                 Atomics.notify(sInt32, 0);
-                output.scrollTop = output.scrollHeight;
+                
+                appendToConsole("\n");
             }
         };
     }
 
     runBtn.onclick = () => {
         output.innerHTML = "";
-        pendingOutput = "";
+        bufferedText = "";
         runBtn.disabled = true;
-        stopBtn.disabled = false;
-        status.textContent = "RUNNING...";
-        
+        runBtn.style.display = "none";
+        stopBtn.style.display = "block";
+        status.textContent = "Running...";
+        status.className = "status-badge status-running";
+
         if (worker) worker.terminate();
 
-        const workerBlob = new Blob([`
+        const workerCode = `
             importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js");
-            let pyodide, sInt32, sUint8;
+            let pyodide;
 
             self.onmessage = async (e) => {
                 const { code, sab } = e.data;
-                sInt32 = new Int32Array(sab);
-                sUint8 = new Uint8Array(sab);
+                const sInt32 = new Int32Array(sab);
+                const sUint8 = new Uint8Array(sab);
 
                 try {
                     if (!pyodide) {
                         pyodide = await loadPyodide();
-                        pyodide.setStdout({ batched: (s) => self.postMessage({ type: "out", text: s }) });
+                        pyodide.setStdout({ 
+                            batched: (s) => self.postMessage({ type: "out", text: s }) 
+                        });
                         pyodide.setStdin({
                             read(buffer) {
+                                // Inform main thread we need input
                                 self.postMessage({ type: "stdin" });
+                                // Wait for Atomics signal
                                 Atomics.wait(sInt32, 0, 0);
                                 const len = sInt32[1];
                                 buffer.set(sUint8.slice(8, 8 + len));
@@ -334,58 +332,55 @@ print(f"hello, {name}!")</textarea>
                     }
                     await pyodide.runPythonAsync(code);
                 } catch (err) {
-                    self.postMessage({ type: "out", text: "\\n" + err.toString() });
+                    self.postMessage({ type: "err", text: err.toString() });
                 }
                 self.postMessage({ type: "done" });
             };
-        `], { type: 'application/javascript' });
+        `;
 
-        worker = new Worker(URL.createObjectURL(workerBlob));
-        
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        worker = new Worker(URL.createObjectURL(blob));
+
         worker.onmessage = (e) => {
-            if (e.data.type === "out") {
-                // Buffer output text. If it's an input prompt, it will be used in handleStdinRequest
-                pendingOutput += e.data.text;
-                
-                // If it looks like a standard output (ending in newline), print it immediately
-                if (e.data.text.includes('\n')) {
-                   const textNode = document.createTextNode(pendingOutput);
-                   output.appendChild(textNode);
-                   pendingOutput = "";
+            const data = e.data;
+            if (data.type === "out") {
+                // Buffer output - Pyodide often sends prompts in small chunks
+                bufferedText += data.text;
+                if (data.text.includes("\n")) {
+                    appendToConsole(bufferedText);
+                    bufferedText = "";
                 }
-                output.scrollTop = output.scrollHeight;
-            } else if (e.data.type === "stdin") {
-                handleStdinRequest();
-            } else if (e.data.type === "done") {
-                // Print any final leftover output
-                if (pendingOutput) {
-                   const textNode = document.createTextNode(pendingOutput);
-                   output.appendChild(textNode);
-                }
-                resetUI();
+            } else if (data.type === "err") {
+                appendToConsole("\n" + data.text, true);
+            } else if (data.type === "stdin") {
+                handleInputRequest();
+            } else if (data.type === "done") {
+                if (bufferedText) appendToConsole(bufferedText);
+                finishRun();
             }
         };
 
         worker.postMessage({ code: editor.getValue(), sab: sab });
     };
 
-    function resetUI() {
+    function finishRun() {
         runBtn.disabled = false;
-        stopBtn.disabled = true;
-        status.textContent = "READY";
-        status.className = "status-indicator ready";
+        runBtn.style.display = "block";
+        stopBtn.style.display = "none";
+        status.textContent = "Ready";
+        status.className = "status-badge status-ready";
     }
 
     stopBtn.onclick = () => {
         if (worker) worker.terminate();
         worker = null;
-        resetUI();
-        log("Process terminated.", true);
+        finishRun();
+        appendToConsole("\n[Process Stopped]", true);
     };
 
     clearBtn.onclick = () => {
         output.innerHTML = "";
-        pendingOutput = "";
+        bufferedText = "";
     };
 </script>
 
