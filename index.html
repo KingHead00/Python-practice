@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python IDE - Classic Pro</title>
+    <title>Python IDE - Classic Restored</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    
     <style>
         :root {
             --bg-dark: #0b1020;
@@ -19,65 +20,154 @@
             --success-green: #22c55e;
             --save-green: #10b981;
         }
+
         * { box-sizing: border-box; }
+
         body {
-            margin: 0; padding: 0;
+            margin: 0;
+            padding: 0;
             font-family: system-ui, -apple-system, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-primary);
-            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
+
+        /* WHITE BOX FIX: Force immediate dark styling for textarea and editor */
+        textarea,.CodeMirror,.console-screen {
+            background-color: var(--bg-dark)!important;
+            color: var(--text-primary)!important;
+            border: none!important;
+            outline: none!important;
+        }
+
         header {
-            padding: 10px 20px;
+            padding: 8px 20px;
             background: var(--panel-color);
             border-bottom: 1px solid var(--border-color);
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
         }
-       .brand-section { display: flex; align-items: center; gap: 12px; }
-       .logo-svg { width: 30px; height: 30px; } /* Removed logo glow */
-        h1 { margin: 0; font-size: 18px; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
-       .status-indicator { font-size: 11px; font-weight: bold; margin-left: 10px; text-transform: uppercase; }
+
+       .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+       .logo-svg { width: 32px; height: 32px; }
+
+        h1 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 900;
+        }
+
+       .status-indicator {
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 15px;
+            text-transform: uppercase;
+        }
+
        .ready { color: var(--success-green); }
-       .running { color: var(--accent-blue); }
+       .running { color: var(--accent-blue); animation: blink 1.5s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
        .controls { display: flex; gap: 8px; }
-       .controls button { padding: 8px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; font-size: 13px; }
+
+       .controls button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
         #runBtn { background: var(--accent-blue); color: #0f172a; }
+        #runBtn:disabled { opacity: 0.3; cursor: not-allowed; }
        .secondary-btn { background: #334155; color: white; }
         #saveBtn { background: var(--save-green); color: white; }
         #stopBtn { background: #ef4444; color: white; }
+
         main {
-            flex: 1; display: grid; grid-template-columns: 1fr 1fr;
-            gap: 15px; /* Added gap between editor and console */
-            padding: 15px; /* Padding around panels */
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px; /* Pane gap */
+            padding: 15px 15px 0 15px; /* Extended to bottom */
         }
+
        .pane {
             background: var(--panel-color);
             border: 1px solid var(--border-color);
-            border-radius: 12px; /* Added rounded corners */
-            display: flex; flex-direction: column; overflow: hidden; height: 100%;
+            border-bottom: none;
+            border-radius: 12px 12px 0 0; /* Rounded corners */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
         }
+
        .pane-label {
-            padding: 8px 12px; font-size: 10px; letter-spacing: 1px; font-weight: 800; color: #94a3b8;
-            background: rgba(0,0,0,0.4); border-bottom: 1px solid var(--border-color); text-transform: uppercase;
+            padding: 8px 12px;
+            font-size: 10px;
+            letter-spacing: 1px;
+            font-weight: 800;
+            color: #94a3b8;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
         }
-       .CodeMirror { flex: 1; height: 100%!important; font-family: 'Fira Code', monospace; font-size: 14px; }
+
+       .CodeMirror {
+            flex: 1;
+            height: 100%!important;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+        }
+
        .console-screen {
-            flex: 1; padding: 15px; font-family: 'Fira Code', monospace;
-            overflow-y: auto; white-space: pre-wrap; background-color: #020617!important;
-            font-size: 14px; line-height: 1.5; color: #d1d5db;
+            flex: 1;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            background-color: #020617!important;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #d1d5db;
         }
+
        .input-cursor {
-            display: inline-block; min-width: 1ch; border-bottom: 2px solid var(--accent-blue);
-            outline: none; color: white; padding: 0 2px; background: rgba(56, 189, 248, 0.1);
+            display: inline-block;
+            min-width: 1ch;
+            border-bottom: 2px solid var(--accent-blue);
+            outline: none;
+            color: white;
+            padding: 0 2px;
+            background: rgba(56, 189, 248, 0.1);
         }
     </style>
 </head>
 <body>
+
 <header>
     <div class="brand-section">
         <svg class="logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M24.05 4C18.17 4 18.52 6.55 18.52 6.55V9.16H24.23V9.95H16.14C16.14 9.95 10.3 10.45 10.3 16.27C10.3 22.1 14.88 22.33 14.88 22.33H17.43V18.78C17.43 18.78 17.27 14.48 21.67 14.48H29.76C29.76 14.48 33.86 14.28 33.86 10.51V6.95C33.86 6.95 34.25 4 24.05 4Z" fill="#3776AB"/>
             <path d="M23.95 44C29.83 44 29.48 41.45 29.48 41.45V38.84H23.77V38.05H31.86C31.86 38.05 37.7 37.55 37.7 31.73C37.7 25.9 33.12 25.67 33.12 25.67H30.57V29.22C30.57 29.22 30.73 33.52 26.33 33.52H18.24C18.24 33.52 14.14 33.72 14.14 37.49V41.05C14.14 41.05 13.75 44 23.95 44Z" fill="#FFD43B"/>
+            <circle cx="16.5" cy="11.5" r="1.5" fill="white"/>
+            <circle cx="31.5" cy="36.5" r="1.5" fill="white"/>
         </svg>
         <h1>Python IDE</h1>
         <span id="status" class="status-indicator ready">READY</span>
@@ -89,6 +179,7 @@
         <button id="runBtn" disabled>Run Code</button>
     </div>
 </header>
+
 <main>
     <div class="pane">
         <div class="pane-label">Editor</div>
@@ -99,35 +190,41 @@
         <div id="consoleOutput" class="console-screen"></div>
     </div>
 </main>
+
 <script>
     const output = document.getElementById("consoleOutput");
     const status = document.getElementById("status");
     const runBtn = document.getElementById("runBtn");
     const stopBtn = document.getElementById("stopBtn");
-    const saveBtn = document.getElementById("saveBtn");
     const clearBtn = document.getElementById("clearBtn");
+    const saveBtn = document.getElementById("saveBtn");
 
     const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
-        mode: "python", theme: "dracula", lineNumbers: true, indentUnit: 4, matchBrackets: true,
+        mode: "python",
+        theme: "dracula",
+        lineNumbers: true,
+        indentUnit: 4,
         extraKeys: {
-            "Ctrl-Enter": function(cm) { runBtn.click(); },
-            "Cmd-Enter": function(cm) { runBtn.click(); },
-            "Ctrl-S": function(cm) { saveBtn.click(); }
+            "Ctrl-Enter": () => runBtn.click(),
+            "Cmd-Enter": () => runBtn.click(),
+            "Ctrl-S": () => saveBtn.click()
         }
     });
 
-    editor.setValue(localStorage.getItem('python_ide_code_final') |
+    editor.setValue(localStorage.getItem('python_ide_code_classic') |
 
-| `name = input("Hello? What is your name? ")\nprint(f"Oh your name is {name}? Thats a nice name")`);
+| `name = input("What is your name? ")\nprint(f"hello, {name}!")`);
 
     saveBtn.onclick = () => {
-        localStorage.setItem('python_ide_code_final', editor.getValue());
+        localStorage.setItem('python_ide_code_classic', editor.getValue());
+        const original = saveBtn.textContent;
         saveBtn.textContent = "Saved!";
-        setTimeout(() => saveBtn.textContent = "Save", 1500);
+        setTimeout(() => saveBtn.textContent = original, 1500);
     };
 
     let worker = null;
     let sab, sInt32, sUint8;
+    let bufferedStdout = ""; // Critical for question prompts
 
     try {
         sab = new SharedArrayBuffer(1024 * 64);
@@ -135,21 +232,29 @@
         sUint8 = new Uint8Array(sab);
         runBtn.disabled = false;
     } catch (e) {
-        status.textContent = "SAB ERROR";
+        status.textContent = "SAB ERROR (Check Headers)";
         status.className = "status-indicator error";
     }
 
     function print(text) {
-        output.appendChild(document.createTextNode(text));
+        const node = document.createTextNode(text);
+        output.appendChild(node);
         output.scrollTop = output.scrollHeight;
     }
 
     function handleInput() {
+        // Flush any pending question text (prompts) immediately
+        if (bufferedStdout) {
+            print(bufferedStdout);
+            bufferedStdout = "";
+        }
+
         const inputSpan = document.createElement("span");
         inputSpan.className = "input-cursor";
         inputSpan.contentEditable = "true";
         output.appendChild(inputSpan);
         inputSpan.focus();
+
         inputSpan.onkeydown = (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
@@ -157,6 +262,7 @@
                 inputSpan.contentEditable = "false";
                 inputSpan.classList.remove("input-cursor");
                 print("\n");
+
                 const encoded = new TextEncoder().encode(val);
                 sUint8.set(encoded, 8);
                 sInt32[1] = encoded.length;
@@ -168,11 +274,14 @@
 
     runBtn.onclick = () => {
         output.innerHTML = "";
+        bufferedStdout = "";
         runBtn.style.display = "none";
         stopBtn.style.display = "block";
         status.textContent = "RUNNING...";
         status.className = "status-indicator running";
+
         if (worker) worker.terminate();
+
         const workerBlob = new Blob(;
                                 buf.set(sUint8.slice(8, 8 + len));
                                 Atomics.store(sInt32, 0, 0);
@@ -187,11 +296,21 @@
                 self.postMessage({ type: "done" });
             };
         `], { type: 'application/javascript' });
+
         worker = new Worker(URL.createObjectURL(workerBlob));
         worker.onmessage = (e) => {
-            if (e.data.type === "out") print(e.data.text);
-            else if (e.data.type === "in") handleInput();
-            else if (e.data.type === "done") resetUI();
+            if (e.data.type === "out") {
+                bufferedStdout += e.data.text;
+                if (e.data.text.includes("\n")) {
+                    print(bufferedStdout);
+                    bufferedStdout = "";
+                }
+            } else if (e.data.type === "in") {
+                handleInput();
+            } else if (e.data.type === "done") {
+                if (bufferedStdout) print(bufferedStdout);
+                resetUI();
+            }
         };
         worker.postMessage({ code: editor.getValue(), sab: sab });
     };
@@ -203,8 +322,13 @@
         status.className = "status-indicator ready";
     }
 
-    stopBtn.onclick = () => { if (worker) worker.terminate(); resetUI(); print("\n"); };
-    clearBtn.onclick = () => { output.innerHTML = ""; };
+    stopBtn.onclick = () => {
+        if (worker) worker.terminate();
+        resetUI();
+        print("\n");
+    };
+
+    clearBtn.onclick = () => { output.innerHTML = ""; bufferedStdout = ""; };
 </script>
 </body>
 </html>
