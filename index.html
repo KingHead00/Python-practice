@@ -162,11 +162,11 @@
 
 <main>
     <div class="pane">
-        <div class="pane-label">Editor</div>
+        <div class="pane-header">Editor</div>
         <textarea id="editorTextarea"></textarea>
     </div>
     <div class="pane">
-        <div class="pane-label">Console</div>
+        <div class="pane-header">Console</div>
         <div id="consoleOutput" class="console-screen"></div>
     </div>
 </main>
@@ -185,14 +185,52 @@
         lineNumbers: true,
         indentUnit: 4,
         autoCloseBrackets: true,
-        matchBrackets: true
+        matchBrackets: true,
+        indentWithTabs: false
     });
 
-    const initialCode = localStorage.getItem('python_ide_code_v2') || `name = input("What is your name? ")\nprint(f"hello, {name}!")`;
-    editor.setValue(initialCode);
+    const complexExample = `# Complex Python Demo: Logic, Loops, and Math
+import random
+
+def start_game():
+    print("--- WELCOME TO THE NUMBER QUEST ---")
+    name = input("Enter your name: ")
+    print(f"Welcome, {name}! Let's see if you can win.")
+    
+    score = 0
+    rounds = 3
+    
+    for i in range(1, rounds + 1):
+        print(f"\\nRound {i} of {rounds}")
+        secret = random.randint(1, 10)
+        
+        try:
+            guess = int(input("Guess a number between 1 and 10: "))
+            
+            if guess == secret:
+                print("Correct! You gain 10 points.")
+                score += 10
+            elif guess < secret:
+                print(f"Too low! The number was {secret}.")
+            else:
+                print(f"Too high! The number was {secret}.")
+        except ValueError:
+            print("That's not a number! Round lost.")
+
+    print("\\n--- GAME OVER ---")
+    if score >= 20:
+        print(f"Masterful! Final Score: {score}")
+    elif score > 0:
+        print(f"Good job. Final Score: {score}")
+    else:
+        print("Better luck next time!")
+
+start_game()`;
+
+    editor.setValue(localStorage.getItem('python_ide_code_v3') || complexExample);
 
     saveBtn.onclick = () => {
-        localStorage.setItem('python_ide_code_v2', editor.getValue());
+        localStorage.setItem('python_ide_code_v3', editor.getValue());
         const original = saveBtn.textContent;
         saveBtn.textContent = "Saved!";
         setTimeout(() => saveBtn.textContent = original, 1500);
@@ -211,7 +249,7 @@
         status.className = "status-indicator error";
     }
 
-    function print(text) {
+    function printToConsole(text) {
         const node = document.createTextNode(text);
         output.appendChild(node);
         output.scrollTop = output.scrollHeight;
@@ -230,7 +268,7 @@
                 const val = inputSpan.textContent + "\n";
                 inputSpan.contentEditable = "false";
                 inputSpan.classList.remove("input-cursor");
-                print("\n");
+                printToConsole("\n");
 
                 const encoded = new TextEncoder().encode(val);
                 sUint8.set(encoded, 8);
@@ -288,7 +326,7 @@
 
         worker = new Worker(URL.createObjectURL(workerBlob));
         worker.onmessage = (e) => {
-            if (e.data.type === "out") print(e.data.text);
+            if (e.data.type === "out") printToConsole(e.data.text);
             else if (e.data.type === "in") handleInput();
             else if (e.data.type === "done") resetUI();
         };
@@ -305,7 +343,7 @@
     stopBtn.onclick = () => {
         if (worker) worker.terminate();
         resetUI();
-        print("\n[Stopped]");
+        printToConsole("\n[Execution Terminated]");
     };
 
     clearBtn.onclick = () => { output.innerHTML = ""; };
