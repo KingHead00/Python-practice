@@ -6,24 +6,22 @@ const stopBtn = document.getElementById("stopBtn");
 // 1. Diagnostic Logger
 function log(msg, type = "info") {
     const div = document.createElement("div");
-    div.style.marginBottom = "5px";
-    if (type === "error") div.style.color = "var(--error)";
-    else if (type === "success") div.style.color = "var(--success)";
-    else div.style.color = "var(--text-dim)";
+    div.style.color = type === "error"? "var(--error-red)" : "#64748b";
+    div.style.fontSize = "12px";
+    div.style.marginBottom = "4px";
     div.textContent = "> " + msg;
     output.appendChild(div);
     output.scrollTop = output.scrollHeight;
 }
 
-// 2. Initialize Editor with Shortcut
+// 2. Initialize Editor with Shortcut Keys
 const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
     mode: "python",
     theme: "dracula",
     lineNumbers: true,
-    indentUnit: 4,
     extraKeys: {
-        "Ctrl-Enter": () => runBtn.click(), // SHORTCUT ADDED
-        "Cmd-Enter": () => runBtn.click()   // MAC SHORTCUT ADDED
+        "Ctrl-Enter": () => runBtn.click(), // Added Ctrl+Enter
+        "Cmd-Enter": () => runBtn.click()   // Added Cmd+Enter for Mac
     }
 });
 
@@ -33,18 +31,17 @@ let sab, sInt32, sUint8, worker = null;
 if (typeof SharedArrayBuffer === "undefined") {
     status.textContent = "SECURITY BLOCKED";
     status.classList.add("error");
-    log("Vercel security headers (COOP/COEP) not active.", "error");
+    log("Security headers missing. Run on Vercel with vercel.json active.", "error");
 } else {
     sab = new SharedArrayBuffer(1024 * 64); 
     sInt32 = new Int32Array(sab);
     sUint8 = new Uint8Array(sab);
-    status.textContent = "READY";
+    status.textContent = "Engine Ready";
     status.classList.add("ready");
     runBtn.disabled = false;
-    log("Engine online.", "success");
 }
 
-// 4. Input Handler
+// 4. Stdin Logic
 function handleStdinRequest() {
     const inputLine = document.createElement("span");
     inputLine.className = "console-input-line";
@@ -69,7 +66,7 @@ function handleStdinRequest() {
     };
 }
 
-// 5. Execution logic
+// 5. Run Execution
 runBtn.onclick = () => {
     output.innerHTML = "";
     runBtn.disabled = true;
@@ -113,12 +110,16 @@ runBtn.onclick = () => {
 
     worker = new Worker(URL.createObjectURL(new Blob([workerCode], {type: 'application/javascript'})));
     worker.onmessage = (e) => {
-        if (e.data.type === "out") output.innerHTML += `<span>${e.data.text}</span>`;
+        if (e.data.type === "out") {
+            const span = document.createElement("span");
+            span.textContent = e.data.text;
+            output.appendChild(span);
+        }
         if (e.data.type === "stdin") handleStdinRequest();
         if (e.data.type === "done") {
             runBtn.disabled = false;
             stopBtn.disabled = true;
-            status.textContent = "READY";
+            status.textContent = "Engine Ready";
         }
     };
     worker.postMessage({ code: editor.getValue(), sab: sab });
@@ -129,7 +130,7 @@ stopBtn.onclick = () => {
     worker = null;
     runBtn.disabled = false;
     stopBtn.disabled = true;
-    status.textContent = "READY";
+    status.textContent = "Engine Ready";
     log("Stopped.", "error");
 };
 
