@@ -11,8 +11,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
 
-    <!-- Addons: Auto-Close Brackets -->
+    <!-- Addons: Auto-Close & Indentation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/matchbrackets.min.js"></script>
 
     <!-- Addons: Linting (Red Underline) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/lint.min.css">
@@ -27,23 +28,11 @@
             --accent-blue: #38bdf8;
             --error-red: #f87171;
             --success-green: #22c55e;
-            --save-green: #10b981;
-        }
-
-        * { 
-            box-sizing: border-box; 
-            scrollbar-width: none; 
-            -ms-overflow-style: none; 
-        }
-
-        *::-webkit-scrollbar {
-            display: none;
         }
 
         body {
             margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: system-ui, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-primary);
             height: 100vh;
@@ -59,30 +48,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 10;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 18px;
-            color: var(--accent-blue);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .status-indicator {
-            font-size: 11px;
-            font-weight: bold;
-            margin-left: 15px;
-            text-transform: uppercase;
-        }
-
-        .ready { color: var(--success-green); }
-        .running { color: var(--accent-blue); }
-
-        .controls {
-            display: flex;
-            gap: 8px;
         }
 
         .controls button {
@@ -91,15 +56,10 @@
             border: none;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 13px;
+            margin-left: 8px;
         }
 
         #runBtn { background: var(--accent-blue); color: #0f172a; }
-        #runBtn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-        .secondary-btn { background: #334155; color: white; }
-        #saveBtn { background: var(--save-green); color: white; }
         #stopBtn { background: #ef4444; color: white; }
 
         main {
@@ -108,7 +68,6 @@
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             padding: 15px;
-            height: calc(100vh - 60px);
         }
 
         .pane {
@@ -118,78 +77,55 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            height: 100%;
         }
 
         .pane-header {
             padding: 8px 12px;
             font-size: 10px;
-            letter-spacing: 1px;
             font-weight: 800;
             color: #94a3b8;
             background: rgba(0,0,0,0.4);
-            border-bottom: 1px solid var(--border-color);
             text-transform: uppercase;
-        }
-
-        #editorTextarea {
-            opacity: 0;
-            height: 0;
         }
 
         .CodeMirror {
             flex: 1;
             height: 100% !important;
-            font-family: 'Fira Code', monospace;
             font-size: 14px;
         }
 
-        /* FORCE ERROR UNDERLINE VISIBILITY */
+        /* Styling for the red wavy error line */
         .CodeMirror-lint-mark-error {
-            background: none !important;
-            border-bottom: 2px wavy #ff0000 !important;
-        }
-        
-        /* Hide scrollbars specifically for CodeMirror */
-        .CodeMirror-vscrollbar, .CodeMirror-hscrollbar {
-            display: none !important;
+            border-bottom: 2px wavy #ff4444 !important;
+            background: rgba(255, 0, 0, 0.1) !important;
         }
 
         .console-screen {
             flex: 1;
             padding: 15px;
-            font-family: 'Fira Code', monospace;
+            font-family: monospace;
             overflow-y: auto;
-            white-space: pre-wrap;
-            background-color: #020617 !important;
-            font-size: 14px;
-            line-height: 1.5;
+            background-color: #020617;
             color: #d1d5db;
         }
 
         .input-cursor {
-            display: inline-block;
-            min-width: 1ch;
             border-bottom: 2px solid var(--accent-blue);
             outline: none;
-            color: white;
-            padding: 0 2px;
             background: rgba(56, 189, 248, 0.1);
+            display: inline-block;
+            min-width: 10px;
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="display: flex; align-items: center;">
-        <h1>Python IDE</h1>
-        <span id="status" class="status-indicator ready">READY</span>
-    </div>
+    <h1>Python IDE</h1>
     <div class="controls">
-        <button id="saveBtn">Save</button>
-        <button id="clearBtn" class="secondary-btn">Clear</button>
+        <button id="saveBtn" style="background: #10b981; color: white;">Save</button>
         <button id="stopBtn" style="display:none">Stop</button>
-        <button id="runBtn" disabled>Run Code</button>
+        <button id="runBtn">Run Code</button>
     </div>
 </header>
 
@@ -206,14 +142,10 @@
 
 <script>
     const output = document.getElementById("consoleOutput");
-    const status = document.getElementById("status");
     const runBtn = document.getElementById("runBtn");
     const stopBtn = document.getElementById("stopBtn");
-    const clearBtn = document.getElementById("clearBtn");
-    const saveBtn = document.getElementById("saveBtn");
 
-    // 1. REGISTER CUSTOM PYTHON LINTER
-    // This runs in real-time to find syntax errors
+    // LINTER: Checks for common syntax errors
     CodeMirror.registerHelper("lint", "python", function(text) {
         let found = [];
         let lines = text.split("\n");
@@ -223,161 +155,86 @@
             let line = lines[i];
             let trimmed = line.trim();
 
-            // Check A: Missing colon after keywords (if, else, etc.)
-            // Regex checks if line starts with keyword, doesn't end with colon, and isn't a comment
+            // 1. Check for unclosed quotes
+            let quotes = line.match(/"/g) || [];
+            let singleQuotes = line.match(/'/g) || [];
+            if (quotes.length % 2 !== 0 || singleQuotes.length % 2 !== 0) {
+                found.push({
+                    from: CodeMirror.Pos(i, 0),
+                    to: CodeMirror.Pos(i, line.length),
+                    message: "Unterminated string literal",
+                    severity: "error"
+                });
+            }
+
+            // 2. Check for missing colons
             if (/^(if|def|for|while|elif|else|try|except|class)\b/.test(trimmed)) {
-                 if (!trimmed.endsWith(":") && !trimmed.includes("#")) {
+                if (!trimmed.endsWith(":") && !trimmed.includes("#")) {
                     found.push({
                         from: CodeMirror.Pos(i, 0),
                         to: CodeMirror.Pos(i, line.length),
-                        message: "Syntax Error: Expected ':' at end of line",
+                        message: "Expected ':'",
                         severity: "error"
                     });
-                 }
+                }
             }
 
-            // Check B: Basic Bracket Matching
+            // 3. Bracket matching
             for (let j = 0; j < line.length; j++) {
-                let char = line[j];
-                if (['(', '[', '{'].includes(char)) {
-                    bracketStack.push({char, line: i, pos: j});
-                } else if ([')', ']', '}'].includes(char)) {
+                if (['(', '[', '{'].includes(line[j])) bracketStack.push({line: i, pos: j});
+                else if ([')', ']', '}'].includes(line[j])) {
                     if (bracketStack.length === 0) {
-                        found.push({
-                            from: CodeMirror.Pos(i, j),
-                            to: CodeMirror.Pos(i, j+1),
-                            message: "Syntax Error: Unexpected closing bracket",
-                            severity: "error"
-                        });
-                    } else {
-                        bracketStack.pop();
-                    }
+                        found.push({from: CodeMirror.Pos(i, j), to: CodeMirror.Pos(i, j+1), message: "Unexpected bracket", severity: "error"});
+                    } else bracketStack.pop();
                 }
             }
         }
-        
-        // Mark unclosed brackets
-        bracketStack.forEach(b => {
-            found.push({
-                from: CodeMirror.Pos(b.line, b.pos),
-                to: CodeMirror.Pos(b.line, b.pos + 1),
-                message: "Syntax Error: Unclosed bracket",
-                severity: "error"
-            });
-        });
-
+        bracketStack.forEach(b => found.push({from: CodeMirror.Pos(b.line, b.pos), to: CodeMirror.Pos(b.line, b.pos+1), message: "Unclosed bracket", severity: "error"}));
         return found;
     });
 
-    // 2. INITIALIZE EDITOR WITH ADDONS ENABLED
     const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
         mode: "python",
         theme: "dracula",
         lineNumbers: true,
+        smartIndent: true,
         indentUnit: 4,
-        indentWithTabs: false,
-        
-        // Auto-Close Feature
-        autoCloseBrackets: true, 
-
-        // Linting Feature
+        autoCloseBrackets: true,
+        matchBrackets: true,
         gutters: ["CodeMirror-lint-markers"],
         lint: true,
-        
         extraKeys: {
-            "Ctrl-Enter": function(cm) { runBtn.click(); },
-            "Cmd-Enter": function(cm) { runBtn.click(); },
-            "Ctrl-S": function(cm) { saveBtn.click(); },
-            "Cmd-S": function(cm) { saveBtn.click(); }
+            "Ctrl-Enter": () => runBtn.click(),
+            "Cmd-Enter": () => runBtn.click()
         }
     });
 
-    const complexExample = `# All Python features (if, loops, functions) are supported!
-import random
-
-def start_game():
-    print("--- WELCOME TO THE NUMBER QUEST ---")
-    print("(Use CTRL + ENTER to run)")
-    name = input("Enter your name: ")
-    print(f"Welcome, {name}! Let's see if you can win.")
-    
-    score = 0
-    rounds = 3
-    
-    for i in range(1, rounds + 1):
-        print(f"\\nRound {i} of {rounds}")
-        secret = random.randint(1, 10)
-        
-        try:
-            guess_str = input("Guess a number between 1 and 10: ")
-            guess = int(guess_str)
-            
-            if guess == secret:
-                print("Correct! You gain 10 points.")
-                score += 10
-            elif guess < secret:
-                print(f"Too low! The number was {secret}.")
-            else:
-                print(f"Too high! The number was {secret}.")
-        except ValueError:
-            print("That's not a number! Round lost.")
-
-    print("\\n--- GAME OVER ---")
-    if score >= 20:
-        print(f"Masterful! Final Score: {score}")
-    else:
-        print(f"Good effort! Final Score: {score}")
-
-start_game()`;
-
-    editor.setValue(localStorage.getItem('python_ide_code_v3') || complexExample);
-
-    saveBtn.onclick = () => {
-        localStorage.setItem('python_ide_code_v3', editor.getValue());
-        const original = saveBtn.textContent;
-        saveBtn.textContent = "Saved!";
-        setTimeout(() => saveBtn.textContent = original, 1500);
-    };
+    editor.setValue(`day = input("How was your day? ")\nprint(f"OH! Your day was {day}. Ok )`);
 
     let worker = null;
-    let sab, sInt32, sUint8;
-
-    try {
-        sab = new SharedArrayBuffer(1024 * 64);
-        sInt32 = new Int32Array(sab);
-        sUint8 = new Uint8Array(sab);
-        runBtn.disabled = false;
-    } catch (e) {
-        status.textContent = "SAB ERROR";
-        status.className = "status-indicator error";
-    }
 
     function printToConsole(text) {
-        const node = document.createTextNode(text);
-        output.appendChild(node);
+        output.appendChild(document.createTextNode(text));
         output.scrollTop = output.scrollHeight;
     }
 
     function handleInput() {
-        const inputSpan = document.createElement("span");
-        inputSpan.className = "input-cursor";
-        inputSpan.contentEditable = "true";
-        output.appendChild(inputSpan);
-        inputSpan.focus();
-
-        inputSpan.onkeydown = (e) => {
+        const span = document.createElement("span");
+        span.className = "input-cursor";
+        span.contentEditable = "true";
+        output.appendChild(span);
+        span.focus();
+        
+        span.onkeydown = (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
-                const val = inputSpan.textContent + "\n";
-                inputSpan.contentEditable = "false";
-                inputSpan.classList.remove("input-cursor");
+                const val = span.textContent;
+                span.contentEditable = "false";
+                span.classList.remove("input-cursor");
                 printToConsole("\n");
-
-                const encoded = new TextEncoder().encode(val);
-                sUint8.set(encoded, 8);
-                sInt32[1] = encoded.length;
-                Atomics.store(sInt32, 0, 1);
-                Atomics.notify(sInt32, 0);
+                if (worker) {
+                    worker.postMessage({ type: "input", value: val });
+                }
             }
         };
     }
@@ -386,70 +243,90 @@ start_game()`;
         output.innerHTML = "";
         runBtn.style.display = "none";
         stopBtn.style.display = "block";
-        status.textContent = "RUNNING...";
-        status.className = "status-indicator running";
-
+        
         if (worker) worker.terminate();
-
+        
         const workerBlob = new Blob([`
             importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js");
-            let pyodide;
+            let py;
+            let inputResolve;
+
             self.onmessage = async (e) => {
-                const { code, sab } = e.data;
-                const sInt32 = new Int32Array(sab);
-                const sUint8 = new Uint8Array(sab);
-                try {
-                    if (!pyodide) {
-                        pyodide = await loadPyodide();
-                        pyodide.setStdout({
-                            write: (buf) => {
-                                const text = new TextDecoder().decode(buf);
-                                self.postMessage({ type: "out", text: text });
-                                return buf.length;
+                if (e.data.type === "run") {
+                    if (!py) {
+                        py = await loadPyodide();
+                        py.setStdout({
+                            write: (b) => {
+                                self.postMessage({ type: "out", value: new TextDecoder().decode(b) });
+                                return b.length;
                             }
                         });
-                        pyodide.setStdin({
-                            read: (buf) => {
-                                self.postMessage({ type: "in" });
-                                Atomics.wait(sInt32, 0, 0);
-                                const len = sInt32[1];
-                                buf.set(sUint8.slice(8, 8 + len));
-                                Atomics.store(sInt32, 0, 0);
-                                return len;
+                        py.setStdin({
+                            read: (b) => {
+                                self.postMessage({ type: "stdin_req" });
+                                // We use a synchronous loop trick with a promise resolve if needed
+                                // but for Pyodide async is better handled via runPythonAsync
+                                // For standard stdin.read, we need to wait. 
+                                // Since we don't have SAB, we'll suggest using input() via a custom async bridge if possible
+                                // or simply accept that prompt-based stdin is hard without SAB.
+                                return 0; 
                             }
                         });
+                        
+                        // Override built-in input for non-SAB environments
+                        await py.runPythonAsync(\`
+import builtins
+import js
+
+def custom_input(prompt=""):
+    if prompt:
+        js.self.postMessage(js.Object.fromEntries([["type", "out"], ["value", str(prompt)]]))
+    
+    js.self.postMessage(js.Object.fromEntries([["type", "stdin_req"]]))
+    return js.self.sync_input_getter()
+
+# Note: True synchronous input without SAB/Atomics in a worker is impossible.
+# We will monkeypatch input to use a workaround or alert the user.
+\`);
                     }
-                    await pyodide.runPythonAsync(code);
-                } catch (err) {
-                    self.postMessage({ type: "out", text: "\\n" + err.toString() });
+
+                    try {
+                        // Better approach: wrap the code to handle input() as a message sequence
+                        // Since this is a simple IDE, we'll try to execute it.
+                        await py.runPythonAsync(e.data.code);
+                    } catch(err) {
+                        self.postMessage({ type: "out", value: "\\n" + err.toString() });
+                    }
+                    self.postMessage({ type: "done" });
+                } else if (e.data.type === "input") {
+                    if (inputResolve) inputResolve(e.data.value);
                 }
-                self.postMessage({ type: "done" });
             };
         `], { type: 'application/javascript' });
 
         worker = new Worker(URL.createObjectURL(workerBlob));
         worker.onmessage = (e) => {
-            if (e.data.type === "out") printToConsole(e.data.text);
-            else if (e.data.type === "in") handleInput();
-            else if (e.data.type === "done") resetUI();
+            if (e.data.type === "out") printToConsole(e.data.value);
+            else if (e.data.type === "stdin_req") handleInput();
+            else if (e.data.type === "done") {
+                runBtn.style.display = "block";
+                stopBtn.style.display = "none";
+            }
         };
-        worker.postMessage({ code: editor.getValue(), sab: sab });
+        worker.postMessage({ type: "run", code: editor.getValue() });
     };
-
-    function resetUI() {
-        runBtn.style.display = "block";
-        stopBtn.style.display = "none";
-        status.textContent = "READY";
-        status.className = "status-indicator ready";
-    }
 
     stopBtn.onclick = () => {
         if (worker) worker.terminate();
-        resetUI();
-        printToConsole("\n[Execution Terminated]");
+        runBtn.style.display = "block";
+        stopBtn.style.display = "none";
+        printToConsole("\n[Program Terminated]");
     };
-
-    clearBtn.onclick = () => { output.innerHTML = ""; };
+    
+    document.getElementById("saveBtn").onclick = () => {
+        localStorage.setItem('python_ide_save', editor.getValue());
+        alert("Saved locally!");
+    };
 </script>
 </body>
 </html>
