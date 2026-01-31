@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python IDE</title>
+    <title>Neon Snake - New skins</title>
     
-    <!-- CodeMirror Core -->
+    <!-- CodeMirror & Pyodide -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+    
+    <!-- Addons: Auto-Close, Match Brackets, Linting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/lint.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/lint.min.css">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
-
-    <!-- Addons: Auto-Close Brackets -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
-
-    <!-- Addons: Linting (Red Underline) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/lint.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/lint/lint.min.js"></script>
     
     <style>
         :root {
@@ -36,9 +37,7 @@
             -ms-overflow-style: none; 
         }
 
-        *::-webkit-scrollbar {
-            display: none;
-        }
+        *::-webkit-scrollbar { display: none; }
 
         body {
             margin: 0;
@@ -78,12 +77,10 @@
         }
 
         .ready { color: var(--success-green); }
-        .running { color: var(--accent-blue); }
+        .running { color: var(--accent-blue); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        .controls {
-            display: flex;
-            gap: 8px;
-        }
+        .controls { display: flex; gap: 8px; }
 
         .controls button {
             padding: 8px 16px;
@@ -132,28 +129,17 @@
             text-transform: uppercase;
         }
 
-        #editorTextarea {
-            opacity: 0;
-            height: 0;
-        }
-
-        .CodeMirror {
-            flex: 1;
-            height: 100% !important;
-            font-family: 'Fira Code', monospace;
-            font-size: 14px;
-        }
-
-        /* FORCE ERROR UNDERLINE VISIBILITY */
+        /* Editor Styling */
+        #editorTextarea { opacity: 0; height: 0; }
+        .CodeMirror { flex: 1; height: 100% !important; font-family: 'Fira Code', monospace; font-size: 14px; }
+        
+        /* Force red underline for errors */
         .CodeMirror-lint-mark-error {
-            background: none !important;
-            border-bottom: 2px wavy #ff0000 !important;
+            border-bottom: 2px wavy #ff4444 !important;
+            background: transparent !important;
         }
         
-        /* Hide scrollbars specifically for CodeMirror */
-        .CodeMirror-vscrollbar, .CodeMirror-hscrollbar {
-            display: none !important;
-        }
+        .CodeMirror-vscrollbar, .CodeMirror-hscrollbar { display: none !important; }
 
         .console-screen {
             flex: 1;
@@ -183,7 +169,7 @@
 <header>
     <div style="display: flex; align-items: center;">
         <h1>Python IDE</h1>
-        <span id="status" class="status-indicator ready">READY</span>
+        <span id="status" class="status-indicator">INITIALIZING...</span>
     </div>
     <div class="controls">
         <button id="saveBtn">Save</button>
@@ -212,8 +198,7 @@
     const clearBtn = document.getElementById("clearBtn");
     const saveBtn = document.getElementById("saveBtn");
 
-    // 1. REGISTER CUSTOM PYTHON LINTER
-    // This runs in real-time to find syntax errors
+    // --- 1. Custom Linter for Python Syntax ---
     CodeMirror.registerHelper("lint", "python", function(text) {
         let found = [];
         let lines = text.split("\n");
@@ -223,230 +208,187 @@
             let line = lines[i];
             let trimmed = line.trim();
 
-            // Check A: Missing colon after keywords (if, else, etc.)
-            // Regex checks if line starts with keyword, doesn't end with colon, and isn't a comment
+            // Check: Missing colon
             if (/^(if|def|for|while|elif|else|try|except|class)\b/.test(trimmed)) {
                  if (!trimmed.endsWith(":") && !trimmed.includes("#")) {
                     found.push({
                         from: CodeMirror.Pos(i, 0),
                         to: CodeMirror.Pos(i, line.length),
-                        message: "Syntax Error: Expected ':' at end of line",
+                        message: "Syntax Error: Expected ':'",
                         severity: "error"
                     });
                  }
             }
 
-            // Check B: Basic Bracket Matching
+            // Check: Unclosed quotes
+            let quotes = (line.match(/"/g) || []).length;
+            let singleQuotes = (line.match(/'/g) || []).length;
+            if (quotes % 2 !== 0 || singleQuotes % 2 !== 0) {
+                found.push({
+                    from: CodeMirror.Pos(i, 0),
+                    to: CodeMirror.Pos(i, line.length),
+                    message: "Unterminated string",
+                    severity: "error"
+                });
+            }
+
+            // Check: Brackets
             for (let j = 0; j < line.length; j++) {
                 let char = line[j];
-                if (['(', '[', '{'].includes(char)) {
-                    bracketStack.push({char, line: i, pos: j});
-                } else if ([')', ']', '}'].includes(char)) {
-                    if (bracketStack.length === 0) {
-                        found.push({
-                            from: CodeMirror.Pos(i, j),
-                            to: CodeMirror.Pos(i, j+1),
-                            message: "Syntax Error: Unexpected closing bracket",
-                            severity: "error"
-                        });
-                    } else {
-                        bracketStack.pop();
-                    }
+                if (['(', '[', '{'].includes(char)) bracketStack.push({line: i, pos: j});
+                else if ([')', ']', '}'].includes(char)) {
+                    if (bracketStack.length === 0) found.push({from: CodeMirror.Pos(i, j), to: CodeMirror.Pos(i, j+1), message: "Unexpected bracket", severity: "error"});
+                    else bracketStack.pop();
                 }
             }
         }
-        
-        // Mark unclosed brackets
-        bracketStack.forEach(b => {
-            found.push({
-                from: CodeMirror.Pos(b.line, b.pos),
-                to: CodeMirror.Pos(b.line, b.pos + 1),
-                message: "Syntax Error: Unclosed bracket",
-                severity: "error"
-            });
-        });
-
+        bracketStack.forEach(b => found.push({from: CodeMirror.Pos(b.line, b.pos), to: CodeMirror.Pos(b.line, b.pos+1), message: "Unclosed bracket", severity: "error"}));
         return found;
     });
 
-    // 2. INITIALIZE EDITOR WITH ADDONS ENABLED
+    // --- 2. Initialize Editor with Addons ---
     const editor = CodeMirror.fromTextArea(document.getElementById("editorTextarea"), {
         mode: "python",
         theme: "dracula",
         lineNumbers: true,
         indentUnit: 4,
-        indentWithTabs: false,
-        
-        // Auto-Close Feature
-        autoCloseBrackets: true, 
-
-        // Linting Feature
+        smartIndent: true,      // Fixes enter indentation
+        autoCloseBrackets: true,// Fixes auto-closing ( ) " "
+        matchBrackets: true,
         gutters: ["CodeMirror-lint-markers"],
-        lint: true,
-        
+        lint: true,             // Enables red underline
         extraKeys: {
-            "Ctrl-Enter": function(cm) { runBtn.click(); },
-            "Cmd-Enter": function(cm) { runBtn.click(); },
-            "Ctrl-S": function(cm) { saveBtn.click(); },
-            "Cmd-S": function(cm) { saveBtn.click(); }
+            "Ctrl-Enter": () => runBtn.click(),
+            "Cmd-Enter": () => runBtn.click(),
+            "Ctrl-S": () => saveBtn.click()
         }
     });
 
-    const complexExample = `# All Python features (if, loops, functions) are supported!
-import random
+    const defaultCode = `name = input("Hello? What is your name? ")\nprint(f"Oh! Your name is {name}? That's a nice name")`;
+    editor.setValue(localStorage.getItem('python_ide_code_final') || defaultCode);
 
-def start_game():
-    print("--- WELCOME TO THE NUMBER QUEST ---")
-    print("(Use CTRL + ENTER to run)")
-    name = input("Enter your name: ")
-    print(f"Welcome, {name}! Let's see if you can win.")
-    
-    score = 0
-    rounds = 3
-    
-    for i in range(1, rounds + 1):
-        print(f"\\nRound {i} of {rounds}")
-        secret = random.randint(1, 10)
-        
-        try:
-            guess_str = input("Guess a number between 1 and 10: ")
-            guess = int(guess_str)
+    // --- 3. Pyodide Main Thread Setup (No SAB needed) ---
+    let pyodide = null;
+    let inputResolver = null;
+
+    async function initPyodide() {
+        try {
+            pyodide = await loadPyodide();
+            // Setup standard streams
+            pyodide.setStdout({ batched: (msg) => printToConsole(msg + "\n") });
+            pyodide.setStderr({ batched: (msg) => printToConsole(msg + "\n") });
             
-            if guess == secret:
-                print("Correct! You gain 10 points.")
-                score += 10
-            elif guess < secret:
-                print(f"Too low! The number was {secret}.")
-            else:
-                print(f"Too high! The number was {secret}.")
-        except ValueError:
-            print("That's not a number! Round lost.")
+            // Custom Input Handler exposed to Python
+            window.get_input = () => {
+                return new Promise((resolve) => {
+                    inputResolver = resolve;
+                    createInput();
+                });
+            };
 
-    print("\\n--- GAME OVER ---")
-    if score >= 20:
-        print(f"Masterful! Final Score: {score}")
-    else:
-        print(f"Good effort! Final Score: {score}")
+            // Python Bootstrapper: Intercept input()
+            await pyodide.runPythonAsync(`
+import builtins
+from js import get_input
 
-start_game()`;
+async def input(prompt=""):
+    print(prompt, end="")
+    return await get_input()
 
-    editor.setValue(localStorage.getItem('python_ide_code_v3') || complexExample);
+builtins.input = input
+            `);
 
-    saveBtn.onclick = () => {
-        localStorage.setItem('python_ide_code_v3', editor.getValue());
-        const original = saveBtn.textContent;
-        saveBtn.textContent = "Saved!";
-        setTimeout(() => saveBtn.textContent = original, 1500);
-    };
-
-    let worker = null;
-    let sab, sInt32, sUint8;
-
-    try {
-        sab = new SharedArrayBuffer(1024 * 64);
-        sInt32 = new Int32Array(sab);
-        sUint8 = new Uint8Array(sab);
-        runBtn.disabled = false;
-    } catch (e) {
-        status.textContent = "SAB ERROR";
-        status.className = "status-indicator error";
+            status.textContent = "READY";
+            status.className = "status-indicator ready";
+            runBtn.disabled = false;
+        } catch (e) {
+            status.textContent = "ERROR";
+            printToConsole("Failed to load Python: " + e.message);
+        }
     }
+    initPyodide();
 
+    // --- 4. UI Functions ---
     function printToConsole(text) {
-        const node = document.createTextNode(text);
-        output.appendChild(node);
+        output.appendChild(document.createTextNode(text));
         output.scrollTop = output.scrollHeight;
     }
 
-    function handleInput() {
-        const inputSpan = document.createElement("span");
-        inputSpan.className = "input-cursor";
-        inputSpan.contentEditable = "true";
-        output.appendChild(inputSpan);
-        inputSpan.focus();
+    function createInput() {
+        const span = document.createElement("span");
+        span.className = "input-cursor";
+        span.contentEditable = "true";
+        output.appendChild(span);
+        span.focus();
+        
+        // Ensure focus stays
+        span.onblur = () => span.focus();
 
-        inputSpan.onkeydown = (e) => {
+        span.onkeydown = (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
-                const val = inputSpan.textContent + "\n";
-                inputSpan.contentEditable = "false";
-                inputSpan.classList.remove("input-cursor");
+                const val = span.textContent;
+                span.contentEditable = "false";
+                span.classList.remove("input-cursor");
+                span.onblur = null;
                 printToConsole("\n");
-
-                const encoded = new TextEncoder().encode(val);
-                sUint8.set(encoded, 8);
-                sInt32[1] = encoded.length;
-                Atomics.store(sInt32, 0, 1);
-                Atomics.notify(sInt32, 0);
+                
+                if (inputResolver) {
+                    const r = inputResolver;
+                    inputResolver = null;
+                    r(val);
+                }
             }
         };
     }
 
-    runBtn.onclick = () => {
+    // --- 5. Execution Logic ---
+    runBtn.onclick = async () => {
+        if (!pyodide) return;
+        
         output.innerHTML = "";
         runBtn.style.display = "none";
         stopBtn.style.display = "block";
         status.textContent = "RUNNING...";
         status.className = "status-indicator running";
 
-        if (worker) worker.terminate();
+        const code = editor.getValue();
+        
+        // Transform synchronous input() calls to await input() to work on main thread
+        // valid regex to find input() that isn't defined (def input)
+        const asyncCode = code.replace(/(?<!def\s+)input\(/g, "await input(");
 
-        const workerBlob = new Blob([`
-            importScripts("https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js");
-            let pyodide;
-            self.onmessage = async (e) => {
-                const { code, sab } = e.data;
-                const sInt32 = new Int32Array(sab);
-                const sUint8 = new Uint8Array(sab);
-                try {
-                    if (!pyodide) {
-                        pyodide = await loadPyodide();
-                        pyodide.setStdout({
-                            write: (buf) => {
-                                const text = new TextDecoder().decode(buf);
-                                self.postMessage({ type: "out", text: text });
-                                return buf.length;
-                            }
-                        });
-                        pyodide.setStdin({
-                            read: (buf) => {
-                                self.postMessage({ type: "in" });
-                                Atomics.wait(sInt32, 0, 0);
-                                const len = sInt32[1];
-                                buf.set(sUint8.slice(8, 8 + len));
-                                Atomics.store(sInt32, 0, 0);
-                                return len;
-                            }
-                        });
-                    }
-                    await pyodide.runPythonAsync(code);
-                } catch (err) {
-                    self.postMessage({ type: "out", text: "\\n" + err.toString() });
-                }
-                self.postMessage({ type: "done" });
-            };
-        `], { type: 'application/javascript' });
-
-        worker = new Worker(URL.createObjectURL(workerBlob));
-        worker.onmessage = (e) => {
-            if (e.data.type === "out") printToConsole(e.data.text);
-            else if (e.data.type === "in") handleInput();
-            else if (e.data.type === "done") resetUI();
-        };
-        worker.postMessage({ code: editor.getValue(), sab: sab });
+        try {
+            await pyodide.runPythonAsync(asyncCode);
+        } catch (err) {
+            printToConsole("\n" + err.toString());
+        } finally {
+            runBtn.style.display = "block";
+            stopBtn.style.display = "none";
+            status.textContent = "READY";
+            status.className = "status-indicator ready";
+        }
     };
 
-    function resetUI() {
-        runBtn.style.display = "block";
-        stopBtn.style.display = "none";
-        status.textContent = "READY";
-        status.className = "status-indicator ready";
-    }
+    saveBtn.onclick = () => {
+        localStorage.setItem('python_ide_code_final', editor.getValue());
+        const orig = saveBtn.textContent;
+        saveBtn.textContent = "Saved!";
+        setTimeout(() => saveBtn.textContent = orig, 1000);
+    };
 
     stopBtn.onclick = () => {
-        if (worker) worker.terminate();
-        resetUI();
-        printToConsole("\n[Execution Terminated]");
+        // Hard reload is the only way to stop main thread execution effectively
+        // forcing a "soft" restart of the UI state
+        if (inputResolver) {
+            // Break the promise loop
+            inputResolver = null;
+            printToConsole("\n[Interrupted]");
+            runBtn.style.display = "block";
+            stopBtn.style.display = "none";
+            status.textContent = "READY";
+            status.className = "status-indicator ready";
+        }
     };
 
     clearBtn.onclick = () => { output.innerHTML = ""; };
