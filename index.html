@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python IDE</title>
-    <!-- Dependencies -->
+    <title>Python IDE — Classic Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
-    <!-- Add addon for auto-closing brackets and quotes -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
     
@@ -24,15 +21,7 @@
             --save-green: #10b981;
         }
 
-        * { 
-            box-sizing: border-box; 
-            scrollbar-width: none; 
-            -ms-overflow-style: none; 
-        }
-
-        *::-webkit-scrollbar {
-            display: none;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -46,77 +35,110 @@
             overflow: hidden;
         }
 
+        /* WHITE BOX FIX: Force immediate dark background for CodeMirror & Textarea */
+        textarea,.CodeMirror,.console-screen {
+            background-color: var(--bg-dark)!important;
+            color: var(--text-primary)!important;
+            border: none!important;
+            outline: none!important;
+        }
+
         header {
-            padding: 10px 20px;
+            padding: 10px 24px;
             background: var(--panel-color);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 10;
+            z-index: 20;
+        }
+
+       .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        /* Clean Python Logo (No Glow) */
+       .logo-svg {
+            width: 28px;
+            height: 28px;
         }
 
         h1 {
             margin: 0;
-            font-size: 18px;
+            font-size: 16px;
             color: var(--accent-blue);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            font-weight: 900;
         }
 
-        .status-indicator {
-            font-size: 11px;
+       .status-indicator {
+            font-size: 10px;
             font-weight: bold;
-            margin-left: 15px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
         }
 
-        .ready { color: var(--success-green); }
-        .running { color: var(--accent-blue); }
+       .ready { color: var(--success-green); }
+       .running { color: var(--accent-blue); animation: pulse 1.5s infinite; }
 
-        .controls {
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+       .controls {
             display: flex;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .controls button {
-            padding: 8px 16px;
+       .controls button {
+            padding: 8px 18px;
             border-radius: 6px;
             border: none;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 13px;
+            font-size: 12px;
+            text-transform: uppercase;
         }
 
         #runBtn { background: var(--accent-blue); color: #0f172a; }
+        #runBtn:hover:not(:disabled) { background: #7dd3fc; transform: translateY(-1px); }
         #runBtn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        .secondary-btn { background: #334155; color: white; }
+       .secondary-btn { background: #334155; color: white; }
+       .secondary-btn:hover { background: #475569; }
+
         #saveBtn { background: var(--save-green); color: white; }
-        #stopBtn { background: #ef4444; color: white; }
+        #saveBtn:hover { background: #059669; }
+
+        #stopBtn { background: var(--error-red); color: white; }
+        #stopBtn:hover { background: #dc2626; }
 
         main {
             flex: 1;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            padding: 15px;
-            height: calc(100vh - 60px);
+            gap: 15px; /* Gap between panes */
+            padding: 15px 15px 0 15px; /* Extended grey box to bottom edge */
         }
 
-        .pane {
+       .pane {
             background: var(--panel-color);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-bottom: none; /* Extending effect */
+            border-radius: 12px 12px 0 0; /* Rounded top corners */
             display: flex;
             flex-direction: column;
             overflow: hidden;
             height: 100%;
         }
 
-        .pane-header {
-            padding: 8px 12px;
+       .pane-label {
+            padding: 8px 15px;
             font-size: 10px;
             letter-spacing: 1px;
             font-weight: 800;
@@ -126,35 +148,27 @@
             text-transform: uppercase;
         }
 
-        #editorTextarea {
-            opacity: 0;
-            height: 0;
-        }
-
-        .CodeMirror {
+       .CodeMirror {
             flex: 1;
-            height: 100% !important;
-            font-family: 'Fira Code', monospace;
+            height: 100%!important;
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
             font-size: 14px;
         }
 
-        .CodeMirror-vscrollbar, .CodeMirror-hscrollbar {
-            display: none !important;
-        }
-
-        .console-screen {
+       .console-screen {
             flex: 1;
-            padding: 15px;
+            padding: 20px;
             font-family: 'Fira Code', monospace;
             overflow-y: auto;
             white-space: pre-wrap;
-            background-color: #020617 !important;
+            background-color: #020617!important;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
             color: #d1d5db;
         }
 
-        .input-cursor {
+        /* Seamless terminal input style */
+       .input-cursor {
             display: inline-block;
             min-width: 1ch;
             border-bottom: 2px solid var(--accent-blue);
@@ -162,13 +176,18 @@
             color: white;
             padding: 0 2px;
             background: rgba(56, 189, 248, 0.1);
+            vertical-align: bottom;
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="display: flex; align-items: center;">
+    <div class="brand-section">
+        <svg class="logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24.05 4C18.17 4 18.52 6.55 18.52 6.55V9.16H24.23V9.95H16.14C16.14 9.95 10.3 10.45 10.3 16.27C10.3 22.1 14.88 22.33 14.88 22.33H17.43V18.78C17.43 18.78 17.27 14.48 21.67 14.48H29.76C29.76 14.48 33.86 14.28 33.86 10.51V6.95C33.86 6.95 34.25 4 24.05 4Z" fill="#3776AB"/>
+            <path d="M23.95 44C29.83 44 29.48 41.45 29.48 41.45V38.84H23.77V38.05H31.86C31.86 38.05 37.7 37.55 37.7 31.73C37.7 25.9 33.12 25.67 33.12 25.67H30.57V29.22C30.57 29.22 30.73 33.52 26.33 33.52H18.24C18.24 33.52 14.14 33.72 14.14 37.49V41.05C14.14 41.05 13.75 44 23.95 44Z" fill="#FFD43B"/>
+        </svg>
         <h1>Python IDE</h1>
         <span id="status" class="status-indicator ready">READY</span>
     </div>
@@ -182,11 +201,11 @@
 
 <main>
     <div class="pane">
-        <div class="pane-header">Editor</div>
+        <div class="pane-label">Editor</div>
         <textarea id="editorTextarea"></textarea>
     </div>
     <div class="pane">
-        <div class="pane-header">Console</div>
+        <div class="pane-label">Console</div>
         <div id="consoleOutput" class="console-screen"></div>
     </div>
 </main>
@@ -204,67 +223,37 @@
         theme: "dracula",
         lineNumbers: true,
         indentUnit: 4,
-        autoCloseBrackets: true, // Enables auto-closing of (), [], {}, "", ''
+        autoCloseBrackets: true,
         matchBrackets: true,
         indentWithTabs: false,
         extraKeys: {
-            "Ctrl-Enter": function(cm) {
-                runBtn.click();
-            },
-            "Cmd-Enter": function(cm) {
-                runBtn.click();
-            },
-            "Ctrl-S": function(cm) {
-                saveBtn.click();
-            },
-            "Cmd-S": function(cm) {
-                saveBtn.click();
-            }
+            "Ctrl-Enter": function(cm) { runBtn.click(); },
+            "Cmd-Enter": function(cm) { runBtn.click(); },
+            "Ctrl-S": function(cm) { saveBtn.click(); },
+            "Cmd-S": function(cm) { saveBtn.click(); }
         }
     });
 
-    const complexExample = `# All Python features (if, loops, functions) are supported!
-import random
+    const initialCode = localStorage.getItem('python_ide_v3_code') || 
+`import random
 
-def start_game():
-    print("--- WELCOME TO THE NUMBER QUEST ---")
-    print("(Use CTRL + ENTER to run)")
-    name = input("Enter your name: ")
-    print(f"Welcome, {name}! Let's see if you can win.")
-    
-    score = 0
-    rounds = 3
-    
-    for i in range(1, rounds + 1):
-        print(f"\\nRound {i} of {rounds}")
-        secret = random.randint(1, 10)
-        
-        try:
-            guess_str = input("Guess a number between 1 and 10: ")
-            guess = int(guess_str)
-            
-            if guess == secret:
-                print("Correct! You gain 10 points.")
-                score += 10
-            elif guess < secret:
-                print(f"Too low! The number was {secret}.")
-            else:
-                print(f"Too high! The number was {secret}.")
-        except ValueError:
-            print("That's not a number! Round lost.")
+print("PYTHON SYSTEM ONLINE")
+print("--------------------")
+name = input("Identify yourself: ")
+print(f"Greetings, {name}.\\n")
 
-    print("\\n--- GAME OVER ---")
-    if score >= 20:
-        print(f"Masterful! Final Score: {score}")
-    else:
-        print(f"Good effort! Final Score: {score}")
+secret = random.randint(1, 10)
+guess = int(input("Guess the secret code (1-10): "))
 
-start_game()`;
+if guess == secret:
+    print("ACCESS GRANTED.")
+else:
+    print(f"ACCESS DENIED. Correct code was {secret}.")`;
 
-    editor.setValue(localStorage.getItem('python_ide_code_v3') || complexExample);
+    editor.setValue(initialCode);
 
     saveBtn.onclick = () => {
-        localStorage.setItem('python_ide_code_v3', editor.getValue());
+        localStorage.setItem('python_ide_v3_code', editor.getValue());
         const original = saveBtn.textContent;
         saveBtn.textContent = "Saved!";
         setTimeout(() => saveBtn.textContent = original, 1500);
@@ -279,7 +268,7 @@ start_game()`;
         sUint8 = new Uint8Array(sab);
         runBtn.disabled = false;
     } catch (e) {
-        status.textContent = "SAB ERROR";
+        status.textContent = "SAB Error";
         status.className = "status-indicator error";
     }
 
@@ -377,7 +366,7 @@ start_game()`;
     stopBtn.onclick = () => {
         if (worker) worker.terminate();
         resetUI();
-        printToConsole("\n[Execution Terminated]");
+        printToConsole("\n");
     };
 
     clearBtn.onclick = () => { output.innerHTML = ""; };
